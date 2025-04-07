@@ -1,31 +1,13 @@
+import time
+from ultralytics import YOLO
+from config import CONFIDENCE_THRESHOLD, RTSP_URL, token
 import cv2
 import requests
-from ultralytics import YOLO
 
-username = 'admin'
-password = 'Magnum@2023'
-IP = '10.10.50.241'
-port = '554'
-channel = '6'
-CONFIDENCE_THRESHOLD = 0.2
 model = YOLO('yolov8n.pt')
 
-""" login_url = "https://10.10.50.181:7101/#!/login"
-
-credentials = {
-    "username": "TesteAPI",
-    "password": "Teste.1"
-}
-
-res = requests.post(login_url, json=credentials)
-token = res.json()['token'] """
-
-token = "eyJ1c2VyTmFtZSI6IlRlc3RlQVBJIn0.3r7jwKtIvO5rAgeCjXGOY_6NEs49YhMg9olrqMwDv1s"
-
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Content-Type": "application/json"
-}
+last_sent = 0
+event_delay = 30
 
 
 def send_event():
@@ -35,7 +17,7 @@ def send_event():
         "Content-Type": "application/json"
     }
     data = {
-        "name": "TESTANDO 9090",
+        "name": "TESTANDO DE NOVO",
         "type": 1
         }
     response = requests.post(url, headers=headers, json=data, verify=False)
@@ -45,16 +27,7 @@ def send_event():
         print("❌ Falha ao enviar evento:", response.text)
 
 
-URL = (
-    'rtsp://{}:{}@{}:{}/cam/realmonitor?channel={}&subtype=0'.format(
-        username, password, IP, port, channel
-    )
-)
-
-""" URL = "./andre-mariano-nosemanual.mp4"
- """
-
-cap = cv2.VideoCapture(URL)
+cap = cv2.VideoCapture(RTSP_URL)
 
 if not cap.isOpened():
     print("Erro ao abrir o vídeo!")
@@ -86,8 +59,10 @@ while True:
             cv2.putText(frame, text, (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
 
-            send_event()
-            break
+            current_time = time.time()
+            if current_time - last_sent >= event_delay:
+                send_event()
+                last_sent = current_time
 
     cv2.imshow('VIDEO', frame)
 
