@@ -4,7 +4,8 @@ from helpers.apiHelper import get
 
 def get_servers():
     print("Fetching servers...")
-    response = get(f"{SERVER1_BASE_URL}/servers", headers=HEADERS, verify=False)
+    url = f"{SERVER1_BASE_URL}/servers"
+    response = get(url, headers=HEADERS)
     if not response:
         return []
 
@@ -25,22 +26,28 @@ def get_servers():
 get_servers()
 
 
-""" def get_cameras_by_server(server_guid):
+def get_cameras_by_server(server_guid):
     url = f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras"
     response = get(url, headers=HEADERS)
     if not response:
         return []
 
-    cameras = response.json()
+    data = response.json()
+    cameras = data.get("cameras", [])
     camera_list = []
     for camera in cameras:
         name = camera.get("name")
         camera_id = camera.get("id")
         camera_list.append({"name": name, "id": camera_id})
+    print(f"Found {len(camera_list)} cameras for server {server_guid}.")
+    for camera in camera_list:
+        print(f"Camera: {camera['name']}, ID: {camera['id']}")
     return camera_list
 
 
-def get_stream_id(server_guid, camera_id, stream_id=0):
+get_cameras_by_server("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}")
+
+""" def get_stream_id(server_guid, camera_id, stream_id=0):
     url = (
         f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
         f"{camera_id}/streams/{stream_id}"
