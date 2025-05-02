@@ -1,4 +1,4 @@
-import requests
+from helpers.apiHelper import post
 
 login_url = "https://10.10.50.181:7101/api/login"
 
@@ -7,5 +7,5 @@ credentials = {
     "password": "Teste.1"
 }
 
-res = requests.post(login_url, json=credentials, verify=False)
+res = post(login_url, json=credentials)
 token = res.json()['login']['userToken']

@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from config.config import (
     CONFIDENCE_THRESHOLD,
     RTSP_URL,
-    headers,
-    SERVER1
+    HEADERS,
+    SERVER1_BASE_URL
 )
 from scripts.guids import PEOPLE_DETECTION_EVENT
 
@@ -22,7 +22,7 @@ formatted_time = scheduled_time.strftime("%H:%M:%S")
 
 def set_event_schedule():
     url = (
-        f"{SERVER1}/api/custom-events/"
+        f"{SERVER1_BASE_URL}/custom-events/"
         f"{PEOPLE_DETECTION_EVENT}/scheduled-times"
     )
 
@@ -31,7 +31,7 @@ def set_event_schedule():
     }
 
     response = requests.post(
-        url, headers=headers, json=data, verify=False
+        url, headers=HEADERS, json=data, verify=False
     )
 
     if response.status_code == 200:

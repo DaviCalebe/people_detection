@@ -13,9 +13,9 @@ RTSP_URL = (
     )
 )
 
-SERVER1 = 'https://10.10.50.181:7101'
+SERVER1_BASE_URL = 'https://10.10.50.181:7101/api'
 
-headers = {
+HEADERS = {
     "Authorization": f"Bearer {token}",
     "Content-Type": "application/json"
 }
