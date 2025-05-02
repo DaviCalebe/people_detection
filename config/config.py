@@ -1,4 +1,4 @@
-from people_detection.scripts.getToken import token
+from scripts.getToken import token
 
 username = 'admin'
 password = 'Magnum@2023'
