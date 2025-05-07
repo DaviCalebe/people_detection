@@ -9,21 +9,21 @@ from config.config import (
     HEADERS,
     SERVER1_BASE_URL
 )
-from scripts.guids import PEOPLE_DETECTION_EVENT
+from scripts.guids import PEOPLE_DETECTION_EVENT_S2
 
 model = YOLO('models/yolov8n.pt')
 
 last_sent = 0
 event_delay = 30
-now = datetime.now()
-scheduled_time = now + timedelta(minutes=10)
-formatted_time = scheduled_time.strftime("%H:%M:%S")
 
 
 def set_event_schedule():
+    now = datetime.now()
+    scheduled_time = now - timedelta(minutes=1)
+    formatted_time = scheduled_time.strftime("%H:%M:%S")
     url = (
         f"{SERVER1_BASE_URL}/custom-events/"
-        f"{PEOPLE_DETECTION_EVENT}/scheduled-times"
+        f"{PEOPLE_DETECTION_EVENT_S2}/scheduled-times"
     )
 
     data = {
@@ -34,12 +34,14 @@ def set_event_schedule():
         url, headers=HEADERS, json=data, verify=False
     )
 
-    if response.status_code == 200:
-        print("Evento agendado com sucesso!")
+    if response.status_code in (200, 201):
+        print("Evento agendado com sucesso!"
+              f"Time sent: {data}")
     else:
         print(
             f"Erro ao agendar evento: "
             f"{response.status_code} - {response.text}"
+            f"Time sent: {data}"
         )
 
     return response

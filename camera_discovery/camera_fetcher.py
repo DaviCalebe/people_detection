@@ -45,7 +45,8 @@ def get_cameras_by_server(server_guid):
     return camera_list
 
 
-get_cameras_by_server("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}")
+get_cameras_by_server("{64147D76-11DD-415D-AE4A-F4EA8159CB3A}")
+
 
 """ def get_stream_id(server_guid, camera_id, stream_id=0):
     url = (
@@ -59,8 +60,10 @@ get_cameras_by_server("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}")
     stream = response.json()
     return stream.get("id")
 
+get_stream_id("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}", "1", 0) """
 
-def get_remote_url(server_guid, camera_id, stream_id=0):
+
+""" def get_remote_url(server_guid, camera_id, stream_id=0):
     url = (
         f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
         f"{camera_id}/streams/{stream_id}/remote-url"
