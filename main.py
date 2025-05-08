@@ -7,9 +7,8 @@ from config.config import (
     CONFIDENCE_THRESHOLD,
     RTSP_URL,
     HEADERS,
-    SERVER1_BASE_URL
 )
-from scripts.guids import PEOPLE_DETECTION_EVENT_S2
+from scripts.server2_guids import S2_PEOPLE_DETECTION_EVENT, SERVER2_BASE_URL
 
 model = YOLO('models/yolov8n.pt')
 
@@ -22,8 +21,8 @@ def set_event_schedule():
     scheduled_time = now - timedelta(minutes=1)
     formatted_time = scheduled_time.strftime("%H:%M:%S")
     url = (
-        f"{SERVER1_BASE_URL}/custom-events/"
-        f"{PEOPLE_DETECTION_EVENT_S2}/scheduled-times"
+        f"{SERVER2_BASE_URL}/custom-events/"
+        f"{S2_PEOPLE_DETECTION_EVENT}/scheduled-times"
     )
 
     data = {
@@ -36,12 +35,12 @@ def set_event_schedule():
 
     if response.status_code in (200, 201):
         print("Evento agendado com sucesso!"
-              f"Time sent: {data}")
+              f" Time sent: {data}")
     else:
         print(
             f"Erro ao agendar evento: "
             f"{response.status_code} - {response.text}"
-            f"Time sent: {data}"
+            f" Time sent: {data}"
         )
 
     return response

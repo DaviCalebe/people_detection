@@ -17,8 +17,6 @@ RTSP_VILA_VELHA = (
     "rtsp://dguard:monitoramento@CFTV2024@192.168.65.23:80/cam/realmonitor?channel=1&subtype=0"
 )
 
-SERVER1_BASE_URL = 'http://10.10.50.180:7102/api'
-SERVER2_BASE_URL = 'http://10.10.50.180:7102/api'
 
 HEADERS = {
     "Authorization": f"Bearer {token}",
