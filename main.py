@@ -4,6 +4,7 @@ import requests
 import subprocess
 import numpy as np
 import json
+import threading
 from ultralytics import YOLO
 from datetime import datetime, timedelta
 from config.config import (
@@ -14,7 +15,6 @@ from config.config import (
 from scripts.server2_guids import S2_PEOPLE_DETECTION_EVENT, SERVER2_BASE_URL
 
 model = YOLO('models/yolov8n.pt')
-model.to('cuda')
 event_delay = 30
 
 
@@ -69,6 +69,36 @@ def get_rtsp_resolution(rtsp_url):
         return None
 
 
+class FreshestFFmpegFrame(threading.Thread):
+    def __init__(self, ffmpeg_proc, width, height):
+        super().__init__()
+        self.proc = ffmpeg_proc
+        self.width = width
+        self.height = height
+        self.frame = None
+        self.lock = threading.Lock()
+        self.running = True
+        self.start()
+
+    def run(self):
+        while self.running:
+            raw_frame = self.proc.stdout.read(self.width * self.height * 3)
+            if not raw_frame:
+                break
+            frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
+            with self.lock:
+                self.frame = frame
+
+    def read(self):
+        with self.lock:
+            return self.frame.copy() if self.frame is not None else None
+
+    def stop(self):
+        self.running = False
+        self.proc.terminate()
+        self.join()
+
+
 def main():
     resolution = get_rtsp_resolution(RTSP_URL)
     if not resolution:
@@ -77,7 +107,6 @@ def main():
 
     width, height = resolution
     last_sent = 0
-    event_delay = 30
 
     ffmpeg_cmd = [
         "ffmpeg",
@@ -89,49 +118,47 @@ def main():
     ]
 
     proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
+    freshest = FreshestFFmpegFrame(proc, width, height)
 
-    while True:
-        raw_frame = proc.stdout.read(width * height * 3)
-        if not raw_frame:
-            print("Frame vazio ou fim do stream.")
-            break
+    try:
+        while True:
+            frame = freshest.read()
+            if frame is None:
+                continue
 
-        frame = np.frombuffer(raw_frame, np.uint8).reshape((height, width, 3))
+            result = model(frame, classes=[0], verbose=False)
+            for objects in result:
+                obj = objects.boxes
+                for data in obj:
+                    conf = float(data.conf[0])
+                    cls_id = int(data.cls[0])
+                    label = model.names[cls_id]
 
-        result = model(frame, classes=[0], verbose=False)
-        for objects in result:
-            obj = objects.boxes
-            for data in obj:
-                conf = float(data.conf[0])
-                cls_id = int(data.cls[0])
-                label = model.names[cls_id]
+                    if label != 'person' or conf < CONFIDENCE_THRESHOLD:
+                        continue
 
-                if label != 'person' or conf < CONFIDENCE_THRESHOLD:
-                    continue
+                    x, y, w, h = data.xyxy[0]
+                    x, y, w, h = int(x), int(y), int(w), int(h)
 
-                x, y, w, h = data.xyxy[0]
-                x, y, w, h = int(x), int(y), int(w), int(h)
+                    cv2.rectangle(frame, (x, y), (w, h), (251, 226, 0), 5)
+                    text = f'{label} {conf:.2f}'
+                    cv2.putText(
+                        frame, text, (x, y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2
+                    )
 
-                cv2.rectangle(frame, (x, y), (w, h), (251, 226, 0), 5)
-                text = f'{label} {conf:.2f}'
-                cv2.putText(
-                    frame, text, (x, y - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2
-                )
+                    current_time = time.time()
+                    if current_time - last_sent >= event_delay:
+                        set_event_schedule()
+                        last_sent = current_time
 
-                current_time = time.time()
-                if current_time - last_sent >= event_delay:
-                    set_event_schedule()
-                    last_sent
-                    last_sent = current_time
+            cv2.imshow('VIDEO', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-        cv2.imshow('VIDEO', frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    proc.terminate()
-    cv2.destroyAllWindows()
+    finally:
+        freshest.stop()
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
