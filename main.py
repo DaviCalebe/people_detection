@@ -80,6 +80,11 @@ def main():
     width, height = resolution
     last_sent = 0
 
+    # Linha vertical no centro da imagem
+    line_x = width // 2
+    line_start = (line_x, 0)
+    line_end = (line_x, height)
+
     ffmpeg_cmd = [
         "ffmpeg",
         "-rtsp_transport", "tcp",
@@ -98,7 +103,13 @@ def main():
             if frame is None:
                 continue
 
+            # Desenha linha virtual para visualização
+            cv2.line(frame, line_start, line_end, (0, 0, 255), 2)
+
             result = model(frame, classes=[0], verbose=False)
+
+            person_detected_right = False
+
             for objects in result:
                 obj = objects.boxes
                 for data in obj:
@@ -109,20 +120,24 @@ def main():
                     if label != 'person' or conf < CONFIDENCE_THRESHOLD:
                         continue
 
-                    x, y, w, h = data.xyxy[0]
-                    x, y, w, h = int(x), int(y), int(w), int(h)
+                    x1, y1, x2, y2 = map(int, data.xyxy[0])
+                    cx = int((x1 + x2) / 2)
 
-                    cv2.rectangle(frame, (x, y), (w, h), (251, 226, 0), 5)
-                    text = f'{label} {conf:.2f}'
-                    cv2.putText(
-                        frame, text, (x, y - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2
-                    )
+                    # Verifica se o centroide está à direita da linha
+                    if cx > line_x:
+                        person_detected_right = True
 
-                    current_time = time.time()
-                    if current_time - last_sent >= event_delay:
-                        set_event_schedule()
-                        last_sent = current_time
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (251, 226, 0), 5)
+                        cv2.putText(frame, f'{label} {conf:.2f}', (x1, y1 - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
+                        cv2.circle(frame, (cx, (y1 + y2) // 2), 5, (255, 0, 0), -1)
+
+            if person_detected_right:
+                current_time = time.time()
+                if current_time - last_sent >= event_delay:
+                    print("[ALERTA] Pessoa detectada à direita da linha!")
+                    set_event_schedule()
+                    last_sent = current_time
 
             cv2.imshow('VIDEO', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
