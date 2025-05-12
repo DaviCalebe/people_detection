@@ -1,46 +1,18 @@
 import time
 import cv2
-import requests
 import subprocess
 import numpy as np
 import json
 import threading
 from ultralytics import YOLO
-from datetime import datetime, timedelta
 from config.config import (
     CONFIDENCE_THRESHOLD,
     RTSP_URL,
-    HEADERS,
 )
-from scripts.server2_guids import S2_PEOPLE_DETECTION_EVENT, SERVER2_BASE_URL
+from events.scheduler import set_event_schedule
 
 model = YOLO('models/yolov8n.pt')
 event_delay = 30
-
-
-def set_event_schedule():
-    now = datetime.now()
-    scheduled_time = now - timedelta(minutes=1)
-    formatted_time = scheduled_time.strftime("%H:%M:%S")
-    url = (
-        f"{SERVER2_BASE_URL}/custom-events/"
-        f"{S2_PEOPLE_DETECTION_EVENT}/scheduled-times"
-    )
-
-    data = {
-        "scheduledTime": formatted_time
-    }
-
-    response = requests.post(
-        url, headers=HEADERS, json=data, verify=False
-    )
-
-    if response.status_code in (200, 201):
-        print("Evento agendado com sucesso! Time sent:", data)
-    else:
-        print(f"Erro ao agendar evento: {response.status_code} - {response.text} Time sent:", data)
-
-    return response
 
 
 def get_rtsp_resolution(rtsp_url):
