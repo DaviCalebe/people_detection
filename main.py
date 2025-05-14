@@ -5,16 +5,17 @@ import numpy as np
 import json
 import threading
 from ultralytics import YOLO
-from config.config import CONFIDENCE_THRESHOLD, RTSP_URL
+from config.config import CONFIDENCE_THRESHOLD, RTSP_URL_1, RTSP_URL_2
 from events.scheduler import set_event_schedule
 
 # YOLOv8 modelo leve
 model = YOLO('models/yolov8n.pt')
+model.to('cuda')
 event_delay = 30  # segundos entre eventos
 
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
-process_every = 5
+process_every = 5  # processar a cada 5 frames
 
 
 def get_rtsp_resolution(rtsp_url):
@@ -66,38 +67,45 @@ class FreshestFFmpegFrame(threading.Thread):
         self.join()
 
 
-def main():
-    resolution = get_rtsp_resolution(RTSP_URL)
-    if not resolution:
-        print("Erro ao obter resolução do RTSP.")
-        return
+class CameraThread(threading.Thread):
+    def __init__(self, rtsp_url, camera_id):
+        super().__init__()
+        self.rtsp_url = rtsp_url
+        self.camera_id = camera_id
+        self.freshest_frame = None
+        self.proc = None
+        self.running = True
 
-    width, height = resolution
-    last_sent = 0
-    frame_count = 0
+    def run(self):
+        resolution = get_rtsp_resolution(self.rtsp_url)
+        if not resolution:
+            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_id}.")
+            return
 
-    # Linha virtual na resolução redimensionada
-    line_x = RESIZE_WIDTH // 2
-    line_start = (line_x, 0)
-    line_end = (line_x, RESIZE_HEIGHT)
+        width, height = resolution
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-fflags", "nobuffer",
+            "-flags", "low_delay",
+            "-strict", "experimental",
+            "-rtsp_transport", "tcp",
+            "-i", self.rtsp_url,
+            "-f", "rawvideo",
+            "-pix_fmt", "bgr24",
+            "-"
+        ]
+        self.proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
+        freshest = FreshestFFmpegFrame(self.proc, width, height)
 
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-fflags", "nobuffer",
-        "-flags", "low_delay",
-        "-strict", "experimental",
-        "-rtsp_transport", "tcp",
-        "-i", RTSP_URL,
-        "-f", "rawvideo",
-        "-pix_fmt", "bgr24",
-        "-"
-    ]
+        # Linha virtual na resolução redimensionada
+        line_x = RESIZE_WIDTH // 2
+        line_start = (line_x, 0)
+        line_end = (line_x, RESIZE_HEIGHT)
 
-    proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
-    freshest = FreshestFFmpegFrame(proc, width, height)
+        frame_count = 0
+        last_sent = 0
 
-    try:
-        while True:
+        while self.running:
             frame = freshest.read()
             if frame is None:
                 continue
@@ -109,15 +117,16 @@ def main():
             cv2.line(resized, line_start, line_end, (0, 0, 255), 2)
 
             if frame_count % process_every != 0:
-                cv2.imshow('VIDEO', resized)
+                cv2.imshow(f'Camera {self.camera_id}', resized)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                 continue
 
+            # Inferência YOLO a cada 5 frames
             start_time = time.time()
             result = model(resized, classes=[0], verbose=False)
             processing_time = time.time() - start_time
-            print(f"[INFO] Tempo de inferência YOLO: {processing_time:.3f} segundos")
+            print(f"[INFO] Tempo de inferência YOLO (Câmera {self.camera_id}): {processing_time:.3f} segundos")
 
             person_detected_right = False
             total_detections = 0
@@ -143,22 +152,41 @@ def main():
 
                     total_detections += 1
 
-            print(f"[INFO] Detecções: {total_detections}")
+            print(f"[INFO] Detecções (Câmera {self.camera_id}): {total_detections}")
 
             if person_detected_right:
                 current_time = time.time()
                 if current_time - last_sent >= event_delay:
-                    print("[ALERTA] Pessoa detectada à direita da linha!")
+                    print(f"[ALERTA] Pessoa detectada à direita da linha! (Câmera {self.camera_id})")
                     set_event_schedule()
                     last_sent = current_time
 
-            cv2.imshow('VIDEO', resized)
+            cv2.imshow(f'Camera {self.camera_id}', resized)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-    finally:
         freshest.stop()
-        cv2.destroyAllWindows()
+
+
+def main():
+    camera_1 = CameraThread(RTSP_URL_1, 1)
+    camera_2 = CameraThread(RTSP_URL_2, 2)
+
+    camera_1.start()
+    camera_2.start()
+
+    try:
+        while True:
+            time.sleep(1)  # Aguardar enquanto as threads estão rodando
+    except KeyboardInterrupt:
+        print("Parando câmeras...")
+
+    camera_1.running = False
+    camera_2.running = False
+    camera_1.join()
+    camera_2.join()
+
+    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

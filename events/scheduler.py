@@ -28,7 +28,7 @@ def set_event_schedule():
     else:
         print(f"Erro ao agendar evento: {response.status_code} - {response.text} Time sent:", data)
 
-    time.sleep(20)
+    time.sleep(1)
 
     delete_url = (
         f"{SERVER2_BASE_URL}/custom-events/"

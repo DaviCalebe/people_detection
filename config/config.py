@@ -7,8 +7,14 @@ port = '554'
 channel = '15'
 CONFIDENCE_THRESHOLD = 0.5
 
-RTSP_URL = (
+RTSP_URL_1 = (
     'rtsp://admin:Magnum@2023@10.10.50.6:554/cam/realmonitor?channel=15&subtype=0'.format(
+        username, password
+    )
+)
+
+RTSP_URL_2 = (
+    'rtsp://admin:Magnum@2023@10.10.50.6:554/cam/realmonitor?channel=14&subtype=0'.format(
         username, password
     )
 )
