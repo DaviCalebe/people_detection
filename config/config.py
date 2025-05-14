@@ -8,7 +8,7 @@ channel = '15'
 CONFIDENCE_THRESHOLD = 0.5
 
 RTSP_URL = (
-    'rtsp://{}:{}@10.10.50.6:554/cam/realmonitor?channel=15&subtype=0'.format(
+    'rtsp://admin:Magnum@2023@10.10.50.6:554/cam/realmonitor?channel=15&subtype=0'.format(
         username, password
     )
 )
