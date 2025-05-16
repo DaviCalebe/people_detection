@@ -6,8 +6,10 @@ from datetime import datetime
 import os
 
 
-def export_to_json(data, filename_prefix="servers_data"):
-    """Exporta os dados em formato JSON com timestamp."""
+IN_PROGRESS_FILE = "recorders_data_in_progress.json"
+
+
+def export_to_json(data, filename_prefix="recorders_data"):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{filename_prefix}_{timestamp}.json"
 
@@ -19,31 +21,44 @@ def export_to_json(data, filename_prefix="servers_data"):
         print(f"\n❌ Erro ao exportar o JSON: {str(e)}")
 
 
-def get_servers():
-    print("Fetching servers...")
+def save_progress(data):
+    with open(IN_PROGRESS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+    print(f"💾 Progresso salvo: {IN_PROGRESS_FILE}")
+
+
+def load_progress():
+    if os.path.exists(IN_PROGRESS_FILE):
+        with open(IN_PROGRESS_FILE, "r", encoding="utf-8") as f:
+            print(f"🔄 Retomando progresso de {IN_PROGRESS_FILE}")
+            return json.load(f)
+    return []
+
+
+def get_recorders():
+    print("Fetching recorders...")
     url = f"{SERVER1_BASE_URL}/servers"
     response = get(url, headers=HEADERS)
     if not response:
         return []
 
     data = response.json()
-    servers = data.get("servers", [])
-    server_list = []
-    for server in servers:
-        name = server.get("name")
-        guid = server.get("guid")
-        server_list.append({"name": name, "guid": guid})
+    recorders = data.get("servers", [])
+    recorder_list = []
+    for recorder in recorders:
+        name = recorder.get("name")
+        guid = recorder.get("guid")
+        recorder_list.append({"name": name, "guid": guid})
 
-    print(f"Found {len(server_list)} servers.")
-    for server in server_list:
-        print(f"Server: {server['name']}, GUID: {server['guid']}")
-    return server_list
+    print(f"Found {len(recorder_list)} recorders.")
+    return recorder_list
 
 
-def get_cameras_by_server(server_guid):
-    url = f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras"
+def get_cameras_by_recorder(recorder_guid, recorder_name):
+    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras"
     response = get(url, headers=HEADERS)
     if not response:
+        print(f"⚠️ Erro: sem resposta ao buscar câmeras do recorder {recorder_name} ({recorder_guid})")
         return []
 
     data = response.json()
@@ -53,43 +68,32 @@ def get_cameras_by_server(server_guid):
         name = camera.get("name")
         camera_id = camera.get("id")
         camera_list.append({"name": name, "id": camera_id})
-    print(f"Found {len(camera_list)} cameras for server {server_guid}.")
-    for camera in camera_list:
-        print(f"Camera: {camera['name']}, ID: {camera['id']}")
+    print(f"Found {len(camera_list)} cameras for recorder {recorder_name}.")
     return camera_list
 
 
-def get_stream_ids(server_guid, camera_id):
-    url = (
-        f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
-        f"{camera_id}/streams"
-    )
+def get_stream_ids(recorder_guid, camera_id, recorder_name, camera_name):
+    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams"
     response = get(url, headers=HEADERS)
     if not response:
-        print("Erro: sem resposta da API.")
+        print(f"⚠️ Erro: sem resposta ao buscar streams da câmera {camera_name} ({camera_id}) no recorder {recorder_name}")
         return None
 
     data = response.json()
     streams = data.get("streams", [])
-
     if not streams:
-        print("Nenhum stream encontrado.")
+        print(f"⚠️ Nenhum stream encontrado para câmera {camera_name} ({camera_id}) no recorder {recorder_name}")
         return None
 
-    # Extrai os IDs dos streams
     stream_ids = [stream.get("id") for stream in streams if "id" in stream]
-
-    print(f"IDs encontrados: {stream_ids}")
     return stream_ids
 
 
-def get_remote_url(server_guid, camera_id, stream_id=0):
-    url = (
-        f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
-        f"{camera_id}/streams/{stream_id}/remote-url"
-    )
+def get_remote_url(recorder_guid, camera_id, stream_id, recorder_name, camera_name):
+    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
     response = get(url, headers=HEADERS)
     if not response:
+        print(f"⚠️ Erro ao buscar remoteUrl do stream {stream_id} da câmera {camera_name} no recorder {recorder_name}")
         return {}
 
     data = response.json()
@@ -101,44 +105,43 @@ def get_remote_url(server_guid, camera_id, stream_id=0):
         "password": remote.get("password"),
     }
 
-    print(f"Dados para stream_id {stream_id}: {result}")
     return result
 
 
-def build_full_server_list():
-    full_data = []
+def build_full_recorder_list():
+    progress_data = load_progress()
+    processed_guids = {rec["guid"] for rec in progress_data}
 
-    servers = get_servers()
-    if not servers:
-        print("Nenhum servidor encontrado.")
-        return full_data
+    recorders = get_recorders()
+    if not recorders:
+        print("Nenhum recorder encontrado.")
+        return progress_data
 
-    for server in servers:
-        server_entry = {
-            "name": server.get("name", "Indisponível"),
-            "guid": server.get("guid", "Indisponível"),
+    for recorder in recorders:
+        if recorder["guid"] in processed_guids:
+            print(f"⏩ Recorder já processado: {recorder['name']}")
+            continue
+
+        recorder_entry = {
+            "name": recorder.get("name", "Indisponível"),
+            "guid": recorder.get("guid", "Indisponível"),
             "cameras": []
         }
 
         try:
-            cameras = get_cameras_by_server(server["guid"])
+            cameras = get_cameras_by_recorder(recorder["guid"], recorder["name"])
         except Exception as e:
-            print(f"Erro ao buscar câmeras do servidor {server['guid']}: {e}")
-            server_entry["cameras"].append({
-                "name": "Indisponível",
-                "id": "Indisponível",
-                "streams": []
-            })
-            full_data.append(server_entry)
-            continue
+            print(f"❌ Erro ao buscar câmeras do recorder {recorder['name']} ({recorder['guid']}): {e}")
+            cameras = []
 
         if not cameras:
-            server_entry["cameras"].append({
+            recorder_entry["cameras"].append({
                 "name": "Indisponível",
                 "id": "Indisponível",
                 "streams": []
             })
-            full_data.append(server_entry)
+            progress_data.append(recorder_entry)
+            save_progress(progress_data)
             continue
 
         for camera in cameras:
@@ -149,19 +152,10 @@ def build_full_server_list():
             }
 
             try:
-                stream_ids = get_stream_ids(server["guid"], camera["id"])
+                stream_ids = get_stream_ids(recorder["guid"], camera["id"], recorder["name"], camera["name"])
             except Exception as e:
-                print(f"Erro ao buscar streams da câmera {camera['id']}: {e}")
-                camera_entry["streams"].append({
-                    "streamId": "Indisponível",
-                    "remoteUrl": {
-                        "url": "Indisponível",
-                        "username": "Indisponível",
-                        "password": "Indisponível"
-                    }
-                })
-                server_entry["cameras"].append(camera_entry)
-                continue
+                print(f"❌ Erro ao buscar streams da câmera {camera['name']} ({camera['id']}) no recorder {recorder['name']}: {e}")
+                stream_ids = None
 
             if not stream_ids:
                 camera_entry["streams"].append({
@@ -172,19 +166,15 @@ def build_full_server_list():
                         "password": "Indisponível"
                     }
                 })
-                server_entry["cameras"].append(camera_entry)
+                recorder_entry["cameras"].append(camera_entry)
                 continue
 
             for stream_id in stream_ids:
                 try:
-                    remote = get_remote_url(server["guid"], camera["id"], stream_id)
+                    remote = get_remote_url(recorder["guid"], camera["id"], stream_id, recorder["name"], camera["name"])
                 except Exception as e:
-                    print(f"Erro ao buscar remoteUrl do stream {stream_id}: {e}")
-                    remote = {
-                        "url": "Indisponível",
-                        "username": "Indisponível",
-                        "password": "Indisponível"
-                    }
+                    print(f"❌ Erro ao buscar remoteUrl do stream {stream_id} da câmera {camera['name']} no recorder {recorder['name']}: {e}")
+                    remote = {}
 
                 if not remote or not remote.get("url"):
                     remote = {
@@ -198,14 +188,22 @@ def build_full_server_list():
                     "remoteUrl": remote
                 })
 
-            server_entry["cameras"].append(camera_entry)
+            recorder_entry["cameras"].append(camera_entry)
 
-        full_data.append(server_entry)
+        progress_data.append(recorder_entry)
+        save_progress(progress_data)
 
     print("Estrutura completa montada com sucesso.")
-    return full_data
+    return progress_data
 
 
 if __name__ == "__main__":
-    data = build_full_server_list()
+    data = build_full_recorder_list()
+
+    # Exportar resultado final
     export_to_json(data)
+
+    # Limpar arquivo de progresso
+    if os.path.exists(IN_PROGRESS_FILE):
+        os.remove(IN_PROGRESS_FILE)
+        print(f"🗑️ Progresso removido: {IN_PROGRESS_FILE}")
