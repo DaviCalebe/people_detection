@@ -10,7 +10,6 @@ from events.scheduler import set_event_schedule
 
 # YOLOv8 modelo leve
 model = YOLO('models/yolov8n.pt')
-model.to('cuda')
 event_delay = 30  # segundos entre eventos
 
 RESIZE_WIDTH = 640

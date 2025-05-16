@@ -1,5 +1,22 @@
-from config.config import SERVER1_BASE_URL, HEADERS
+from config.config import HEADERS
 from helpers.apiHelper import get
+from scripts.server1_guids import SERVER1_BASE_URL
+import json
+from datetime import datetime
+import os
+
+
+def export_to_json(data, filename_prefix="servers_data"):
+    """Exporta os dados em formato JSON com timestamp."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.json"
+
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        print(f"\n✅ Arquivo exportado com sucesso: {os.path.abspath(filename)}")
+    except Exception as e:
+        print(f"\n❌ Erro ao exportar o JSON: {str(e)}")
 
 
 def get_servers():
@@ -23,9 +40,6 @@ def get_servers():
     return server_list
 
 
-get_servers()
-
-
 def get_cameras_by_server(server_guid):
     url = f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras"
     response = get(url, headers=HEADERS)
@@ -45,25 +59,31 @@ def get_cameras_by_server(server_guid):
     return camera_list
 
 
-get_cameras_by_server("{64147D76-11DD-415D-AE4A-F4EA8159CB3A}")
-
-
-""" def get_stream_id(server_guid, camera_id, stream_id=0):
+def get_stream_ids(server_guid, camera_id):
     url = (
         f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
-        f"{camera_id}/streams/{stream_id}"
+        f"{camera_id}/streams"
     )
     response = get(url, headers=HEADERS)
     if not response:
+        print("Erro: sem resposta da API.")
         return None
 
-    stream = response.json()
-    return stream.get("id")
+    data = response.json()
+    streams = data.get("streams", [])
 
-get_stream_id("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}", "1", 0) """
+    if not streams:
+        print("Nenhum stream encontrado.")
+        return None
+
+    # Extrai os IDs dos streams
+    stream_ids = [stream.get("id") for stream in streams if "id" in stream]
+
+    print(f"IDs encontrados: {stream_ids}")
+    return stream_ids
 
 
-""" def get_remote_url(server_guid, camera_id, stream_id=0):
+def get_remote_url(server_guid, camera_id, stream_id=0):
     url = (
         f"{SERVER1_BASE_URL}/servers/{server_guid}/cameras/"
         f"{camera_id}/streams/{stream_id}/remote-url"
@@ -73,35 +93,119 @@ get_stream_id("{771ED3D0-9BA1-4B2A-B3D4-82A78B5B7E19}", "1", 0) """
         return {}
 
     data = response.json()
-    return {
-        "url": data.get("url"),
-        "username": data.get("username"),
-        "password": data.get("password"),
+    remote = data.get("remoteUrl", {})
+
+    result = {
+        "url": remote.get("url"),
+        "username": remote.get("username"),
+        "password": remote.get("password"),
     }
 
+    print(f"Dados para stream_id {stream_id}: {result}")
+    return result
 
-def run_discovery_flow():
+
+def build_full_server_list():
+    full_data = []
+
     servers = get_servers()
+    if not servers:
+        print("Nenhum servidor encontrado.")
+        return full_data
+
     for server in servers:
-        print(f"\nServer: {server['name']}")
-        cameras = get_cameras_by_server(server["guid"])
+        server_entry = {
+            "name": server.get("name", "Indisponível"),
+            "guid": server.get("guid", "Indisponível"),
+            "cameras": []
+        }
+
+        try:
+            cameras = get_cameras_by_server(server["guid"])
+        except Exception as e:
+            print(f"Erro ao buscar câmeras do servidor {server['guid']}: {e}")
+            server_entry["cameras"].append({
+                "name": "Indisponível",
+                "id": "Indisponível",
+                "streams": []
+            })
+            full_data.append(server_entry)
+            continue
+
+        if not cameras:
+            server_entry["cameras"].append({
+                "name": "Indisponível",
+                "id": "Indisponível",
+                "streams": []
+            })
+            full_data.append(server_entry)
+            continue
+
         for camera in cameras:
-            print(f"  Camera: {camera['name']}")
+            camera_entry = {
+                "name": camera.get("name", "Indisponível"),
+                "id": camera.get("id", "Indisponível"),
+                "streams": []
+            }
+
             try:
-                stream_id = get_stream_id(server["guid"], camera["id"])
-                if stream_id is None:
-                    print("    [No stream ID found]")
-                    continue
-
-                stream_data = get_remote_url(
-                    server["guid"], camera["id"], stream_id
-                )
-                print(f"    URL: {stream_data.get('url')}")
-                print(f"    Username: {stream_data.get('username')}")
-                print(f"    Password: {stream_data.get('password')}")
+                stream_ids = get_stream_ids(server["guid"], camera["id"])
             except Exception as e:
-                print(f"    [Error fetching stream]: {e}")
+                print(f"Erro ao buscar streams da câmera {camera['id']}: {e}")
+                camera_entry["streams"].append({
+                    "streamId": "Indisponível",
+                    "remoteUrl": {
+                        "url": "Indisponível",
+                        "username": "Indisponível",
+                        "password": "Indisponível"
+                    }
+                })
+                server_entry["cameras"].append(camera_entry)
+                continue
+
+            if not stream_ids:
+                camera_entry["streams"].append({
+                    "streamId": "Indisponível",
+                    "remoteUrl": {
+                        "url": "Indisponível",
+                        "username": "Indisponível",
+                        "password": "Indisponível"
+                    }
+                })
+                server_entry["cameras"].append(camera_entry)
+                continue
+
+            for stream_id in stream_ids:
+                try:
+                    remote = get_remote_url(server["guid"], camera["id"], stream_id)
+                except Exception as e:
+                    print(f"Erro ao buscar remoteUrl do stream {stream_id}: {e}")
+                    remote = {
+                        "url": "Indisponível",
+                        "username": "Indisponível",
+                        "password": "Indisponível"
+                    }
+
+                if not remote or not remote.get("url"):
+                    remote = {
+                        "url": "Indisponível",
+                        "username": "Indisponível",
+                        "password": "Indisponível"
+                    }
+
+                camera_entry["streams"].append({
+                    "streamId": stream_id,
+                    "remoteUrl": remote
+                })
+
+            server_entry["cameras"].append(camera_entry)
+
+        full_data.append(server_entry)
+
+    print("Estrutura completa montada com sucesso.")
+    return full_data
 
 
-run_discovery_flow()
- """
+if __name__ == "__main__":
+    data = build_full_server_list()
+    export_to_json(data)
