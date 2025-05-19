@@ -1,6 +1,6 @@
 from config.config import HEADERS
 from helpers.apiHelper import get
-from scripts.server1_guids import SERVER1_BASE_URL
+from scripts.server2_guids import SERVER2_BASE_URL
 import json
 from datetime import datetime
 import os
@@ -37,7 +37,7 @@ def load_progress():
 
 def get_recorders():
     print("Fetching recorders...")
-    url = f"{SERVER1_BASE_URL}/servers"
+    url = f"{SERVER2_BASE_URL}/servers"
     response = get(url, headers=HEADERS)
     if not response:
         return []
@@ -55,7 +55,7 @@ def get_recorders():
 
 
 def get_cameras_by_recorder(recorder_guid, recorder_name):
-    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras"
+    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro: sem resposta ao buscar câmeras do recorder {recorder_name} ({recorder_guid})")
@@ -73,7 +73,7 @@ def get_cameras_by_recorder(recorder_guid, recorder_name):
 
 
 def get_stream_ids(recorder_guid, camera_id, recorder_name, camera_name):
-    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams"
+    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro: sem resposta ao buscar streams da câmera {camera_name} ({camera_id}) no recorder {recorder_name}")
@@ -90,7 +90,7 @@ def get_stream_ids(recorder_guid, camera_id, recorder_name, camera_name):
 
 
 def get_remote_url(recorder_guid, camera_id, stream_id, recorder_name, camera_name):
-    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
+    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro ao buscar remoteUrl do stream {stream_id} da câmera {camera_name} no recorder {recorder_name}")
