@@ -74,3 +74,4 @@ def import_json_to_structure(input_file, server_id, output_file="unified_invento
 
 
 import_json_to_structure("recorders_data_20250516_200943.json", "server2")
+""" import_json_to_structure("recorders_data_20250516_160211.json", "server1") """
