@@ -19,9 +19,8 @@ event_delay = 30  # segundos entre eventos
 model = YOLO('models/yolov8n.pt')
 
 # Carregar dados do inventário
-with open('servers_data.json', 'r', encoding='utf-8') as f:
+with open('merged_inventory.json', 'r', encoding='utf-8') as f:
     servers_data = json.load(f)
-
 
 def get_rtsp_resolution(rtsp_url):
     cmd = [
@@ -39,7 +38,6 @@ def get_rtsp_resolution(rtsp_url):
     except (KeyError, IndexError):
         print("Não foi possível extrair resolução.")
         return None
-
 
 class FreshestFFmpegFrame(threading.Thread):
     def __init__(self, ffmpeg_proc, width, height):
@@ -70,7 +68,6 @@ class FreshestFFmpegFrame(threading.Thread):
         self.running = False
         self.proc.terminate()
         self.join()
-
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name):
@@ -157,60 +154,76 @@ class CameraThread(threading.Thread):
 
         freshest.stop()
 
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Selecionar câmeras para monitoramento")
-    parser.add_argument('--server', help='Nome do servidor (ex: Server1)')
+    parser.add_argument('--server', help='Nome do servidor (ex: server1)')
     parser.add_argument('--recorder', nargs='+', help='Nome(s) dos gravadores específicos')
     parser.add_argument('--camera', nargs='+', help='Nome(s) das câmeras específicas')
     return parser.parse_args()
 
+def select_stream0(camera_data):
+    for stream in camera_data['streams']:
+        if stream.get('streamId') == 0:
+            url = stream['remoteUrl']['url']
+            if url and url.lower() != 'indisponível':
+                return url
+    return None
 
 def main():
     args = parse_arguments()
     selected_cameras = []
 
     if args.server:
-        for server in servers_data:
-            if server['name'] == args.server:
-                for camera in server['cameras']:
-                    for stream in camera['streams']:
-                        if stream['remoteUrl']['url'] != 'Indisponível':
-                            selected_cameras.append((camera['name'], stream['remoteUrl']['url']))
+        for server_name, server_data in servers_data['servers'].items():
+            if server_name == args.server:
+                for recorder_name, recorder_data in server_data['recorders'].items():
+                    for camera_name, camera_data in recorder_data['cameras'].items():
+                        url = select_stream0(camera_data)
+                        if url:
+                            selected_cameras.append((camera_name, url))
 
     elif args.recorder:
-        for server in servers_data:
-            for recorder_name in args.recorder:
-                if server['name'] == recorder_name:
-                    for camera in server['cameras']:
-                        for stream in camera['streams']:
-                            if stream['remoteUrl']['url'] != 'Indisponível':
-                                selected_cameras.append((camera['name'], stream['remoteUrl']['url']))
+        for server_data in servers_data['servers'].values():
+            for recorder_name, recorder_data in server_data['recorders'].items():
+                if recorder_name in args.recorder:
+                    for camera_name, camera_data in recorder_data['cameras'].items():
+                        url = select_stream0(camera_data)
+                        if url:
+                            selected_cameras.append((camera_name, url))
 
     elif args.camera:
-        for server in servers_data:
-            for camera in server['cameras']:
-                if camera['name'] in args.camera:
-                    for stream in camera['streams']:
-                        if stream['remoteUrl']['url'] != 'Indisponível':
-                            selected_cameras.append((camera['name'], stream['remoteUrl']['url']))
+        for server_data in servers_data['servers'].values():
+            for recorder_data in server_data['recorders'].values():
+                for camera_name, camera_data in recorder_data['cameras'].items():
+                    if camera_name in args.camera:
+                        url = select_stream0(camera_data)
+                        if url:
+                            selected_cameras.append((camera_name, url))
 
     else:
         print("Nenhum argumento fornecido. Selecione manualmente:")
-        for i, server in enumerate(servers_data):
-            print(f"{i + 1}: {server['name']}")
+        servers = list(servers_data['servers'].keys())
+        for i, server in enumerate(servers):
+            print(f"{i + 1}: {server}")
         server_idx = int(input("Escolha o servidor: ")) - 1
+        selected_server = servers[server_idx]
 
-        cameras = servers_data[server_idx]['cameras']
+        recorders = list(servers_data['servers'][selected_server]['recorders'].keys())
+        for i, recorder in enumerate(recorders):
+            print(f"{i + 1}: {recorder}")
+        recorder_idx = int(input("Escolha o gravador: ")) - 1
+        selected_recorder = recorders[recorder_idx]
+
+        cameras = list(servers_data['servers'][selected_server]['recorders'][selected_recorder]['cameras'].keys())
         for i, camera in enumerate(cameras):
-            print(f"{i + 1}: {camera['name']}")
-
+            print(f"{i + 1}: {camera}")
         selected_idxs = input("Escolha as câmeras (ex: 1 2 3): ").split()
         for idx in selected_idxs:
-            camera = cameras[int(idx) - 1]
-            for stream in camera['streams']:
-                if stream['remoteUrl']['url'] != 'Indisponível':
-                    selected_cameras.append((camera['name'], stream['remoteUrl']['url']))
+            camera_name = cameras[int(idx) - 1]
+            camera_data = servers_data['servers'][selected_server]['recorders'][selected_recorder]['cameras'][camera_name]
+            url = select_stream0(camera_data)
+            if url:
+                selected_cameras.append((camera_name, url))
 
     if not selected_cameras:
         print("Nenhuma câmera válida selecionada.")
@@ -232,7 +245,6 @@ def main():
             thread.join()
 
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()

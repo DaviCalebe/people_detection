@@ -15780,7 +15780,7 @@
                 {
                   "streamId": 0,
                   "remoteUrl": {
-                    "url": "rtsp://10.10.50.6:80/cam/realmonitor?channel=15&subtype=0",
+                    "url": "rtsp://admin:Magnum@2023@10.10.50.6:80/cam/realmonitor?channel=15&subtype=0",
                     "username": "admin",
                     "password": "Magnum@2023"
                   }
@@ -15788,7 +15788,7 @@
                 {
                   "streamId": 1,
                   "remoteUrl": {
-                    "url": "rtsp://10.10.50.6:80/cam/realmonitor?channel=15&subtype=1",
+                    "url": "teste",
                     "username": "admin",
                     "password": "Magnum@2023"
                   }
