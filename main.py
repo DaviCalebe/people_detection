@@ -6,6 +6,7 @@ import numpy as np
 import threading
 import argparse
 import sqlite3
+from urllib.parse import urlparse, urlunparse
 from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
@@ -18,6 +19,14 @@ event_delay = 30
 model = YOLO('models/yolov8n.pt')
 
 
+def insert_rtsp_credentials(url_base, username, password):
+    parsed = urlparse(url_base)
+    netloc = f"{username}:{password}@{parsed.hostname}"
+    if parsed.port:
+        netloc += f":{parsed.port}"
+    return urlunparse(parsed._replace(netloc=netloc))
+
+
 def get_selected_cameras(camera_ids=None):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -27,7 +36,8 @@ def get_selected_cameras(camera_ids=None):
     if camera_ids:
         placeholders = ','.join('?' * len(camera_ids))
         cursor.execute(f"""
-            SELECT c.name, s.url FROM cameras c
+            SELECT c.name, s.url, s.username, s.password
+            FROM cameras c
             JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
             WHERE c.id IN ({placeholders}) AND s.url != 'indisponível'
         """, tuple(camera_ids))
@@ -254,8 +264,9 @@ def main():
         return
 
     threads = []
-    for (camera_name, rtsp_url) in cameras_to_monitor:
-        thread = CameraThread(rtsp_url, camera_name)
+    for (camera_name, rtsp_url, username, password) in cameras_to_monitor:
+        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
+        thread = CameraThread(full_rtsp_url, camera_name)
         thread.start()
         threads.append(thread)
 
