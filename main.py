@@ -1,20 +1,40 @@
+import json
 import time
 import cv2
 import subprocess
 import numpy as np
-import json
 import threading
+import argparse
+import sqlite3
 from ultralytics import YOLO
-from config.config import CONFIDENCE_THRESHOLD, RTSP_URL_1, RTSP_URL_2
 from events.scheduler import set_event_schedule
 
-# YOLOv8 modelo leve
-model = YOLO('models/yolov8n.pt')
-event_delay = 30  # segundos entre eventos
-
+CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
-process_every = 5  # processar a cada 5 frames
+PROCESS_EVERY = 5
+event_delay = 30
+
+model = YOLO('models/yolov8n.pt')
+
+
+def get_selected_cameras(camera_ids=None):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    selected = []
+
+    if camera_ids:
+        placeholders = ','.join('?' * len(camera_ids))
+        cursor.execute(f"""
+            SELECT c.name, s.url FROM cameras c
+            JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
+            WHERE c.id IN ({placeholders}) AND s.url != 'indisponível'
+        """, tuple(camera_ids))
+        selected = cursor.fetchall()
+
+    conn.close()
+    return selected
 
 
 def get_rtsp_resolution(rtsp_url):
@@ -67,36 +87,26 @@ class FreshestFFmpegFrame(threading.Thread):
 
 
 class CameraThread(threading.Thread):
-    def __init__(self, rtsp_url, camera_id):
+    def __init__(self, rtsp_url, camera_name):
         super().__init__()
         self.rtsp_url = rtsp_url
-        self.camera_id = camera_id
-        self.freshest_frame = None
-        self.proc = None
+        self.camera_name = camera_name
         self.running = True
 
     def run(self):
         resolution = get_rtsp_resolution(self.rtsp_url)
         if not resolution:
-            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_id}.")
+            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_name}.")
             return
 
         width, height = resolution
         ffmpeg_cmd = [
-            "ffmpeg",
-            "-fflags", "nobuffer",
-            "-flags", "low_delay",
-            "-strict", "experimental",
-            "-rtsp_transport", "tcp",
-            "-i", self.rtsp_url,
-            "-f", "rawvideo",
-            "-pix_fmt", "bgr24",
-            "-"
+            "ffmpeg", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
+            "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
         ]
-        self.proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
-        freshest = FreshestFFmpegFrame(self.proc, width, height)
+        proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
+        freshest = FreshestFFmpegFrame(proc, width, height)
 
-        # Linha virtual na resolução redimensionada
         line_x = RESIZE_WIDTH // 2
         line_start = (line_x, 0)
         line_end = (line_x, RESIZE_HEIGHT)
@@ -112,26 +122,21 @@ class CameraThread(threading.Thread):
             frame_count += 1
             resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
 
-            # Desenha linha virtual
             cv2.line(resized, line_start, line_end, (0, 0, 255), 2)
 
-            if frame_count % process_every != 0:
-                cv2.imshow(f'Camera {self.camera_id}', resized)
+            if frame_count % PROCESS_EVERY != 0:
+                cv2.imshow(f'{self.camera_name}', resized)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                 continue
 
-            # Inferência YOLO a cada 5 frames
-            start_time = time.time()
             result = model(resized, classes=[0], verbose=False)
-            processing_time = time.time() - start_time
-            print(f"[INFO] Tempo de inferência YOLO (Câmera {self.camera_id}): {processing_time:.3f} segundos")
 
             person_detected_right = False
             total_detections = 0
 
             for objects in result:
-                for i, data in enumerate(objects.boxes):
+                for data in objects.boxes:
                     conf = float(data.conf[0])
                     cls_id = int(data.cls[0])
                     label = model.names[cls_id]
@@ -151,39 +156,117 @@ class CameraThread(threading.Thread):
 
                     total_detections += 1
 
-            print(f"[INFO] Detecções (Câmera {self.camera_id}): {total_detections}")
+            print(f"[INFO] Detecções ({self.camera_name}): {total_detections}")
 
             if person_detected_right:
                 current_time = time.time()
                 if current_time - last_sent >= event_delay:
-                    print(f"[ALERTA] Pessoa detectada à direita da linha! (Câmera {self.camera_id})")
+                    print(f"[ALERTA] Pessoa detectada à direita da linha! ({self.camera_name})")
                     set_event_schedule()
                     last_sent = current_time
 
-            cv2.imshow(f'Camera {self.camera_id}', resized)
+            cv2.imshow(f'{self.camera_name}', resized)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         freshest.stop()
 
 
-def main():
-    camera_1 = CameraThread(RTSP_URL_1, 1)
-    camera_2 = CameraThread(RTSP_URL_2, 2)
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Selecionar câmeras para monitoramento")
+    parser.add_argument('--camera-id', nargs='+', type=int, help='IDs das câmeras específicas')
+    return parser.parse_args()
 
-    camera_1.start()
-    camera_2.start()
+
+def interactive_selection():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    # Etapa 1: escolher o servidor
+    cursor.execute("SELECT name FROM servers")
+    servers = [row[0] for row in cursor.fetchall()]
+    print("\nServidores disponíveis:")
+    for i, s in enumerate(servers, 1):
+        print(f"{i}. {s}")
+
+    server_idx = int(input("Escolha o número do servidor: ")) - 1
+    selected_server = servers[server_idx]
+
+    # Etapa 2: escolher os gravadores
+    cursor.execute("SELECT name FROM recorders WHERE server_id = (SELECT id FROM servers WHERE name = ?)", (selected_server,))
+    recorders = [row[0] for row in cursor.fetchall()]
+    print("\nGravadores disponíveis:")
+    for i, r in enumerate(recorders, 1):
+        print(f"{i}. {r}")
+    print("0. Todos")
+
+    recorder_input = input("Escolha os números dos gravadores (separados por espaço): ")
+    if recorder_input.strip() == "0":
+        selected_recorders = recorders
+    else:
+        selected_indexes = [int(i)-1 for i in recorder_input.split()]
+        selected_recorders = [recorders[i] for i in selected_indexes]
+
+    # Etapa 3: escolher câmeras
+    placeholders = ','.join('?' * len(selected_recorders))
+    cursor.execute(f"""
+        SELECT c.id, c.name FROM cameras c
+        JOIN recorders r ON c.recorder_id = r.id
+        WHERE r.name IN ({placeholders})
+    """, tuple(selected_recorders))
+    camera_rows = cursor.fetchall()
+
+    cameras = [name for _, name in camera_rows]
+    camera_ids = [cid for cid, _ in camera_rows]
+
+    print("\nCâmeras disponíveis:")
+    for i, (cid, name) in enumerate(camera_rows, 1):
+        print(f"{i}. ID {cid} - {name}")
+    print("0. Todas")
+
+    camera_input = input("Escolha os números das câmeras (separados por espaço): ")
+    if camera_input.strip() == "0":
+        selected_camera_ids = camera_ids
+    else:
+        selected_indexes = [int(i)-1 for i in camera_input.split()]
+        selected_camera_ids = [camera_ids[i] for i in selected_indexes]
+
+    selected_camera_names = [cameras[i] for i in selected_indexes] if camera_input.strip() != "0" else cameras
+    conn.close()
+
+    return selected_camera_ids, selected_camera_names
+
+
+def main():
+    args = parse_arguments()
+
+    if not args.camera_id:
+        # Modo interativo
+        selected_camera_ids, selected_camera_names = interactive_selection()
+    else:
+        selected_camera_ids = args.camera_id
+        selected_camera_names = [f"Camera {cid}" for cid in selected_camera_ids]
+
+    cameras_to_monitor = get_selected_cameras(camera_ids=selected_camera_ids)
+
+    if not cameras_to_monitor:
+        print("Nenhuma câmera válida selecionada.")
+        return
+
+    threads = []
+    for (camera_name, rtsp_url) in cameras_to_monitor:
+        thread = CameraThread(rtsp_url, camera_name)
+        thread.start()
+        threads.append(thread)
 
     try:
         while True:
-            time.sleep(1)  # Aguardar enquanto as threads estão rodando
+            time.sleep(1)
     except KeyboardInterrupt:
-        print("Parando câmeras...")
-
-    camera_1.running = False
-    camera_2.running = False
-    camera_1.join()
-    camera_2.join()
+        print("Encerrando...")
+        for thread in threads:
+            thread.running = False
+            thread.join()
 
     cv2.destroyAllWindows()
 
