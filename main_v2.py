@@ -1,26 +1,58 @@
+import json
 import time
 import cv2
 import subprocess
 import numpy as np
-import json
 import threading
 import argparse
+import sqlite3
 from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
-# Configurações globais
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 PROCESS_EVERY = 5
-event_delay = 30  # segundos entre eventos
+event_delay = 30
 
-# YOLOv8 modelo leve
 model = YOLO('models/yolov8n.pt')
 
-# Carregar dados do inventário
-with open('merged_inventory.json', 'r', encoding='utf-8') as f:
-    servers_data = json.load(f)
+
+def get_selected_cameras(server=None, recorders=None, cameras=None):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    selected = []
+
+    if server:
+        cursor.execute("""
+            SELECT c.name, s.url FROM cameras c
+            JOIN recorders r ON c.recorder_id = r.id
+            JOIN servers sr ON r.server_id = sr.id
+            JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
+            WHERE sr.name = ? AND s.url != 'indisponível'""", (server,))
+        selected = cursor.fetchall()
+
+    elif recorders:
+        placeholders = ','.join('?' * len(recorders))
+        cursor.execute(f"""
+            SELECT c.name, s.url FROM cameras c
+            JOIN recorders r ON c.recorder_id = r.id
+            JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
+            WHERE r.name IN ({placeholders}) AND s.url != 'indisponível'""", tuple(recorders))
+        selected = cursor.fetchall()
+
+    elif cameras:
+        placeholders = ','.join('?' * len(cameras))
+        cursor.execute(f"""
+            SELECT c.name, s.url FROM cameras c
+            JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
+            WHERE c.name IN ({placeholders}) AND s.url != 'indisponível'""", tuple(cameras))
+        selected = cursor.fetchall()
+
+    conn.close()
+    return selected
+
 
 def get_rtsp_resolution(rtsp_url):
     cmd = [
@@ -38,6 +70,7 @@ def get_rtsp_resolution(rtsp_url):
     except (KeyError, IndexError):
         print("Não foi possível extrair resolução.")
         return None
+
 
 class FreshestFFmpegFrame(threading.Thread):
     def __init__(self, ffmpeg_proc, width, height):
@@ -68,6 +101,7 @@ class FreshestFFmpegFrame(threading.Thread):
         self.running = False
         self.proc.terminate()
         self.join()
+
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name):
@@ -154,6 +188,7 @@ class CameraThread(threading.Thread):
 
         freshest.stop()
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Selecionar câmeras para monitoramento")
     parser.add_argument('--server', help='Nome do servidor (ex: server1)')
@@ -161,69 +196,14 @@ def parse_arguments():
     parser.add_argument('--camera', nargs='+', help='Nome(s) das câmeras específicas')
     return parser.parse_args()
 
-def select_stream0(camera_data):
-    for stream in camera_data['streams']:
-        if stream.get('streamId') == 0:
-            url = stream['remoteUrl']['url']
-            if url and url.lower() != 'indisponível':
-                return url
-    return None
 
 def main():
     args = parse_arguments()
-    selected_cameras = []
-
-    if args.server:
-        for server_name, server_data in servers_data['servers'].items():
-            if server_name == args.server:
-                for recorder_name, recorder_data in server_data['recorders'].items():
-                    for camera_name, camera_data in recorder_data['cameras'].items():
-                        url = select_stream0(camera_data)
-                        if url:
-                            selected_cameras.append((camera_name, url))
-
-    elif args.recorder:
-        for server_data in servers_data['servers'].values():
-            for recorder_name, recorder_data in server_data['recorders'].items():
-                if recorder_name in args.recorder:
-                    for camera_name, camera_data in recorder_data['cameras'].items():
-                        url = select_stream0(camera_data)
-                        if url:
-                            selected_cameras.append((camera_name, url))
-
-    elif args.camera:
-        for server_data in servers_data['servers'].values():
-            for recorder_data in server_data['recorders'].values():
-                for camera_name, camera_data in recorder_data['cameras'].items():
-                    if camera_name in args.camera:
-                        url = select_stream0(camera_data)
-                        if url:
-                            selected_cameras.append((camera_name, url))
-
-    else:
-        print("Nenhum argumento fornecido. Selecione manualmente:")
-        servers = list(servers_data['servers'].keys())
-        for i, server in enumerate(servers):
-            print(f"{i + 1}: {server}")
-        server_idx = int(input("Escolha o servidor: ")) - 1
-        selected_server = servers[server_idx]
-
-        recorders = list(servers_data['servers'][selected_server]['recorders'].keys())
-        for i, recorder in enumerate(recorders):
-            print(f"{i + 1}: {recorder}")
-        recorder_idx = int(input("Escolha o gravador: ")) - 1
-        selected_recorder = recorders[recorder_idx]
-
-        cameras = list(servers_data['servers'][selected_server]['recorders'][selected_recorder]['cameras'].keys())
-        for i, camera in enumerate(cameras):
-            print(f"{i + 1}: {camera}")
-        selected_idxs = input("Escolha as câmeras (ex: 1 2 3): ").split()
-        for idx in selected_idxs:
-            camera_name = cameras[int(idx) - 1]
-            camera_data = servers_data['servers'][selected_server]['recorders'][selected_recorder]['cameras'][camera_name]
-            url = select_stream0(camera_data)
-            if url:
-                selected_cameras.append((camera_name, url))
+    selected_cameras = get_selected_cameras(
+        server=args.server,
+        recorders=args.recorder,
+        cameras=args.camera
+    )
 
     if not selected_cameras:
         print("Nenhuma câmera válida selecionada.")
@@ -245,6 +225,7 @@ def main():
             thread.join()
 
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
