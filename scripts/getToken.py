@@ -1,6 +1,6 @@
 from helpers.apiHelper import post
 
-login_url = "http://10.10.50.180:7102/api/login"
+login_url = "http://10.10.50.181:7101/api/login"
 
 credentials = {
     "username": "TesteAPI",
