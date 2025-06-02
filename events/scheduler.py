@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import time
 import requests
 from config.config import HEADERS
-from scripts.server2_guids import S2_PEOPLE_DETECTION_EVENT, SERVER2_BASE_URL
+from scripts.station_guids import STATION_PEOPLE_DETECTION_EVENT, STATION_BASE_URL
 
 
 def set_event_schedule():
@@ -11,8 +11,8 @@ def set_event_schedule():
     formatted_time = scheduled_time.strftime("%H:%M:%S")
 
     url = (
-        f"{SERVER2_BASE_URL}/custom-events/"
-        f"{S2_PEOPLE_DETECTION_EVENT}/scheduled-times"
+        f"{STATION_BASE_URL}/custom-events/"
+        f"{STATION_PEOPLE_DETECTION_EVENT}/scheduled-times"
     )
 
     data = {
@@ -31,8 +31,8 @@ def set_event_schedule():
     time.sleep(1)
 
     delete_url = (
-        f"{SERVER2_BASE_URL}/custom-events/"
-        f"{S2_PEOPLE_DETECTION_EVENT}/scheduled-times/{formatted_time}"
+        f"{STATION_BASE_URL}/custom-events/"
+        f"{STATION_PEOPLE_DETECTION_EVENT}/scheduled-times/{formatted_time}"
     )
 
     delete_response = requests.delete(

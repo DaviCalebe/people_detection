@@ -1,28 +1,15 @@
-from scripts.getToken import token
+from helpers.apiHelper import post
+from scripts.station_guids import STATION_BASE_URL
 
-username = 'admin'
-password = 'Magnum@2023'
-IP = '10.10.50.6'
-port = '554'
-channel = '15'
-CONFIDENCE_THRESHOLD = 0.5
+login_url = f"{STATION_BASE_URL}/login"
 
-RTSP_URL_1 = (
-    'rtsp://admin:Magnum@2023@10.10.50.6:554/cam/realmonitor?channel=15&subtype=0'.format(
-        username, password
-    )
-)
+credentials = {
+    "username": "TesteAPI",
+    "password": "Teste.1"
+}
 
-RTSP_URL_2 = (
-    'rtsp://admin:Magnum@2023@10.10.50.6:554/cam/realmonitor?channel=14&subtype=0'.format(
-        username, password
-    )
-)
-
-RTSP_VILA_VELHA = (
-    "rtsp://dguard:monitoramento@CFTV2024@192.168.65.23:80/cam/realmonitor?channel=1&subtype=0"
-)
-
+res = post(login_url, json=credentials)
+token = res.json()['login']['userToken']
 
 HEADERS = {
     "Authorization": f"Bearer {token}",
