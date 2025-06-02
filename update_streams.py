@@ -3,14 +3,14 @@ import os
 from datetime import datetime
 from config.config import HEADERS
 from helpers.apiHelper import get
-from scripts.server1_guids import SERVER1_BASE_URL
+from scripts.server2_guids import SERVER2_BASE_URL
 
 JSON_PATH = "merged_inventory.json"
 TEMP_PATH = "merged_inventory_temp.json"
 BACKUP_SUFFIX = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 def get_remote_url(recorder_guid, camera_id, stream_id, recorder_name, camera_name):
-    url = f"{SERVER1_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
+    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
     response = get(url, headers=HEADERS)
 
     if not response:
@@ -62,10 +62,19 @@ def update_remote_urls(json_path):
                     if stream_id == "Indisponível":
                         continue
 
-                    # Pular se remoteUrl já estiver completo
-                    existing = stream.get("remoteUrl", {})
-                    if all(existing.get(k) not in [None, ""] for k in ["url", "username", "password"]):
-                        continue
+                    existing = stream.get("remoteUrl")
+
+                    # Ignorar se remoteUrl for "disabled" ou estiver preenchido corretamente
+                    if isinstance(existing, dict):
+                        url_val = existing.get("url", "")
+                        if url_val == "disabled":
+                            print(f"[INFO] Ignorado (disabled): {server_name} > {recorder_name} > {camera_name} > Stream {stream_id}")
+                            continue
+                        if all(existing.get(k) not in [None, "", "disconnected"] for k in ["url", "username", "password"]):
+                            print(f"[INFO] Ignorado (já preenchido): {server_name} > {recorder_name} > {camera_name} > Stream {stream_id}")
+                            continue
+
+                    # Se remoteUrl for None, ou tiver campos incompletos ou "disconnected", ele segue para atualização
 
                     try:
                         remote_url = get_remote_url(
