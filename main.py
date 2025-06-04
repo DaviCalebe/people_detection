@@ -8,7 +8,7 @@ import argparse
 import sqlite3
 from urllib.parse import urlparse, urlunparse
 from ultralytics import YOLO
-from events.scheduler import set_event_schedule, set_fullscreen_camera
+from events.scheduler import set_event_schedule
 
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
@@ -176,8 +176,7 @@ class CameraThread(threading.Thread):
                 current_time = time.time()
                 if current_time - last_sent >= event_delay:
                     print(f"[ALERTA] Pessoa detectada à direita da linha! ({self.camera_name})")
-                    set_event_schedule()
-                    set_fullscreen_camera(self.dguard_camera_id, self.recorder_guid)
+                    set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     last_sent = current_time
 
             cv2.imshow(f'{self.camera_name}', resized)
