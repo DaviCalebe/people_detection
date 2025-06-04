@@ -1,5 +1,5 @@
 from helpers.apiHelper import post
-from scripts.station_guids import STATION_BASE_URL
+from guids.station_guids import STATION_BASE_URL
 
 login_url = f"{STATION_BASE_URL}/login"
 

@@ -8,7 +8,7 @@ import argparse
 import sqlite3
 from urllib.parse import urlparse, urlunparse
 from ultralytics import YOLO
-from events.scheduler import set_event_schedule
+from events.scheduler import set_event_schedule, set_fullscreen_camera
 
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
@@ -36,9 +36,10 @@ def get_selected_cameras(camera_ids=None):
     if camera_ids:
         placeholders = ','.join('?' * len(camera_ids))
         cursor.execute(f"""
-            SELECT c.name, s.url, s.username, s.password
+            SELECT c.id, c.camera_id AS dguard_camera_id, c.name, s.url, s.username, s.password, r.guid
             FROM cameras c
             JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
+            JOIN recorders r ON c.recorder_id = r.id
             WHERE c.id IN ({placeholders}) AND s.url != 'indisponível'
         """, tuple(camera_ids))
         selected = cursor.fetchall()
@@ -97,10 +98,13 @@ class FreshestFFmpegFrame(threading.Thread):
 
 
 class CameraThread(threading.Thread):
-    def __init__(self, rtsp_url, camera_name):
+    def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid):
         super().__init__()
         self.rtsp_url = rtsp_url
         self.camera_name = camera_name
+        self.camera_id = camera_id
+        self.dguard_camera_id = dguard_camera_id
+        self.recorder_guid = recorder_guid
         self.running = True
 
     def run(self):
@@ -173,6 +177,7 @@ class CameraThread(threading.Thread):
                 if current_time - last_sent >= event_delay:
                     print(f"[ALERTA] Pessoa detectada à direita da linha! ({self.camera_name})")
                     set_event_schedule()
+                    set_fullscreen_camera(self.dguard_camera_id, self.recorder_guid)
                     last_sent = current_time
 
             cv2.imshow(f'{self.camera_name}', resized)
@@ -264,9 +269,9 @@ def main():
         return
 
     threads = []
-    for (camera_name, rtsp_url, username, password) in cameras_to_monitor:
+    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid) in cameras_to_monitor:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-        thread = CameraThread(full_rtsp_url, camera_name)
+        thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid)
         thread.start()
         threads.append(thread)
 

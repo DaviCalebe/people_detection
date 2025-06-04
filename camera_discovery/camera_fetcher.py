@@ -1,6 +1,6 @@
 from config.config import HEADERS
 from helpers.apiHelper import get
-from scripts.server2_guids import SERVER2_BASE_URL
+from guids.server2_guids import SERVER2_BASE_URL
 import json
 from datetime import datetime
 import os
