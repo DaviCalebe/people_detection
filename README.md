@@ -3,12 +3,12 @@
 1. Crie o ambiente virtual:
 
    ```bash
-   python -m venv venv
+   python -m venv .venv
 
 2. Ative o ambiente:
 
    ```bash
-   .\venv\Scripts\activate
+   .\.venv\Scripts\activate
 
 3. Instale as dependências:
 
