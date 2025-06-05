@@ -121,10 +121,6 @@ class CameraThread(threading.Thread):
         proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
         freshest = FreshestFFmpegFrame(proc, width, height)
 
-        line_x = RESIZE_WIDTH // 2
-        line_start = (line_x, 0)
-        line_end = (line_x, RESIZE_HEIGHT)
-
         frame_count = 0
         last_sent = 0
 
@@ -136,8 +132,6 @@ class CameraThread(threading.Thread):
             frame_count += 1
             resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
 
-            cv2.line(resized, line_start, line_end, (0, 0, 255), 2)
-
             if frame_count % PROCESS_EVERY != 0:
                 cv2.imshow(f'{self.camera_name}', resized)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -146,7 +140,7 @@ class CameraThread(threading.Thread):
 
             result = model(resized, classes=[0], verbose=False)
 
-            person_detected_right = False
+            person_detected = False
             total_detections = 0
 
             for objects in result:
@@ -159,23 +153,18 @@ class CameraThread(threading.Thread):
                         continue
 
                     x1, y1, x2, y2 = map(int, data.xyxy[0])
-                    cx = int((x1 + x2) // 2)
-
-                    if cx > line_x:
-                        person_detected_right = True
-                        cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
-                        cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
-                        cv2.circle(resized, (cx, (y1 + y2) // 2), 5, (255, 0, 0), -1)
-
+                    cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
+                    cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
+                    person_detected = True
                     total_detections += 1
 
             print(f"[INFO] Detecções ({self.camera_name}): {total_detections}")
 
-            if person_detected_right:
+            if person_detected:
                 current_time = time.time()
                 if current_time - last_sent >= event_delay:
-                    print(f"[ALERTA] Pessoa detectada à direita da linha! ({self.camera_name})")
+                    print(f"[ALERTA] Pessoa detectada! ({self.camera_name})")
                     set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     last_sent = current_time
 
