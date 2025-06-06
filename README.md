@@ -14,3 +14,9 @@
 
    ```bash
    pip install -r requirements.txt
+
+
+## Comando para iniciar o servidor
+   
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000
