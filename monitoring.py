@@ -61,6 +61,9 @@ class FreshestFFmpegFrame(threading.Thread):
             raw_frame = self.proc.stdout.read(frame_size)
             if not raw_frame:
                 break
+            if len(raw_frame) != frame_size:
+                continue  # Pula frames incompletos (geralmente no fim da transmissão)
+
             frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
             with self.lock:
                 self.frame = frame
@@ -101,8 +104,9 @@ class CameraThread(threading.Thread):
 
         frame_count = 0
         last_sent = 0
+        start_time = time.time()
 
-        while self.running:
+        while self.running and (time.time() - start_time < 20):
             frame = freshest.read()
             if frame is None:
                 continue
