@@ -2,8 +2,9 @@ from datetime import datetime, timedelta
 import time
 import requests
 from config.config import HEADERS
-from guids.station_guids import STATION_PEOPLE_DETECTION_EVENT, STATION_BASE_URL, STATION_SOURCE
+from guids.station_guids import STATION_PEOPLE_DETECTION_EVENT, STATION_BASE_URL, STATION_SOURCE, STATION_SOURCE_FULLTIME
 import threading
+
 
 def delay_deleting_event(formatted_time, delay_seconds=10):
     def delete():
@@ -26,7 +27,7 @@ def delay_deleting_event(formatted_time, delay_seconds=10):
 
 def set_event_schedule(camera_id, recorder_guid):
     now = datetime.now()
-    scheduled_time = now + timedelta(seconds=10)
+    scheduled_time = now 
     formatted_time = scheduled_time.strftime("%H:%M:%S")
 
     # 1. Agendar evento
@@ -46,6 +47,8 @@ def set_event_schedule(camera_id, recorder_guid):
 
     # 2. Ação fullscreen
     update_camera_url = f"{STATION_BASE_URL}/event-actions/sources/{STATION_SOURCE}/actions/fullscreen-camera"
+    update_camera_url = f"{STATION_BASE_URL}/event-actions/sources/{STATION_SOURCE_FULLTIME}/actions/fullscreen-camera"
+
 
     data = {
         "enabled": True,
