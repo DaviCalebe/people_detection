@@ -28,7 +28,7 @@ def insert_rtsp_credentials(url_base, username, password):
 
 def get_rtsp_resolution(rtsp_url):
     cmd = [
-        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "C:\\ffmpeg\\bin\\ffprobe.exe", "-v", "error", "-select_streams", "v:0",
         "-show_entries", "stream=width,height",
         "-of", "json", rtsp_url
     ]
@@ -96,7 +96,7 @@ class CameraThread(threading.Thread):
 
         width, height = resolution
         ffmpeg_cmd = [
-            "ffmpeg", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
+            "C:\\ffmpeg\\bin\\ffmpeg.exe", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
             "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
         ]
         proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)

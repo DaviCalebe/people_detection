@@ -27,7 +27,7 @@ def delay_deleting_event(formatted_time, delay_seconds=10):
 
 def set_event_schedule(camera_id, recorder_guid):
     now = datetime.now()
-    scheduled_time = now 
+    scheduled_time = now + timedelta(seconds=10)
     formatted_time = scheduled_time.strftime("%H:%M:%S")
 
     # 1. Agendar evento

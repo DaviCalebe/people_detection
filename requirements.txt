@@ -30,12 +30,14 @@ seaborn==0.13.2
 setuptools==80.0.1
 six==1.17.0
 sympy==1.14.0
-torch==2.7.0+cu118
-torchaudio==2.7.0+cu118
-torchvision==0.22.0+cu118
+torch==2.7.0
+torchaudio==2.7.0
+torchvision==0.22.0
 tqdm==4.67.1
 typing_extensions==4.13.2
 tzdata==2025.2
 ultralytics==8.3.121
 ultralytics-thop==2.0.14
 urllib3==2.4.0
+uvicorn==0.29.0
+fastapi

@@ -8,13 +8,21 @@
 2. Ative o ambiente:
 
    ```bash
-   .\.venv\Scripts\activate
+   source .venv/Scripts/activate
 
 3. Instale as dependências:
 
    ```bash
    pip install -r requirements.txt
 
+4. Outras dependências (precisam ser instaladas via terminal):
+   
+   ```bash
+   winget install ffmpeg
+
+   ## Caso queira rodar o YOLO pela GPU(opcional):
+   ```bash
+   pip install torch==2.7.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
 
 ## Comando para iniciar o servidor
    
