@@ -115,9 +115,10 @@ class CameraThread(threading.Thread):
             resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
 
             if frame_count % PROCESS_EVERY != 0:
-                cv2.imshow(f'{self.camera_name}', resized)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                # Desabilitado: Exibição do vídeo ao vivo
+                # cv2.imshow(f'{self.camera_name}', resized)
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                #     break
                 continue
 
             result = model(resized, classes=[0], verbose=False)
@@ -135,9 +136,10 @@ class CameraThread(threading.Thread):
                         continue
 
                     x1, y1, x2, y2 = map(int, data.xyxy[0])
-                    cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
-                    cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
+                    # Desabilitado: Desenho de caixas e texto no frame
+                    # cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
+                    # cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
+                    #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
                     person_detected = True
                     total_detections += 1
 
@@ -149,10 +151,12 @@ class CameraThread(threading.Thread):
                     print(f"[ALERTA] Pessoa detectada! ({self.camera_name})")
                     set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     last_sent = current_time
-
-            cv2.imshow(f'{self.camera_name}', resized)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+            # Desabilitado: Exibição do frame processado
+            # cv2.imshow(f'{self.camera_name}', resized)
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     break
 
         freshest.stop()
 
