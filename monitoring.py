@@ -96,7 +96,7 @@ class CameraThread(threading.Thread):
 
         width, height = resolution
         ffmpeg_cmd = [
-            "C:\\ffmpeg\\bin\\ffmpeg.exe", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
+            "C:\\ffmpeg\\bin\\ffmpeg.exe", "-loglevel", "error", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
             "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
         ]
         proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
@@ -106,7 +106,7 @@ class CameraThread(threading.Thread):
         last_sent = 0
         start_time = time.time()
 
-        while self.running and (time.time() - start_time < 20):
+        while self.running and (time.time() - start_time < 10):
             frame = freshest.read()
             if frame is None:
                 continue
