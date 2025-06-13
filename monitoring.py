@@ -6,6 +6,7 @@ import cv2
 import json
 import numpy as np
 from urllib.parse import urlparse, urlunparse
+from ast import literal_eval   # <-- importar literal_eval para converter as keys
 from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
@@ -16,6 +17,64 @@ PROCESS_EVERY = 5
 event_delay = 30
 
 model = YOLO('models/yolov8n.pt')
+
+# --- Carregar ZONES do arquivo JSON com keys convertidas para tupla
+with open('zones.json', 'r') as f:
+    raw = json.load(f)
+    ZONES = {literal_eval(k): v for k, v in raw.items()}
+
+
+def is_in_zone(center, config):
+    cx, cy = center
+    print(f"[DEBUG] is_in_zone chamado com center={center} e config={config}")
+
+    if config["type"] == "side":
+        (x1, y1), (x2, y2) = config["line"]
+        print(f"[DEBUG] Linha: ({x1},{y1}) -> ({x2},{y2})")
+
+        # Vetor da linha
+        dx = x2 - x1
+        dy = y2 - y1
+        print(f"[DEBUG] Vetor linha dx={dx}, dy={dy}")
+
+        # Vetor do ponto em relação ao ponto inicial da linha
+        dxp = cx - x1
+        dyp = cy - y1
+        print(f"[DEBUG] Vetor ponto dxp={dxp}, dyp={dyp}")
+
+        # Produto vetorial (para saber de que lado da linha está)
+        cross = dx * dyp - dy * dxp
+        print(f"[DEBUG] Produto vetorial (cross) = {cross}")
+
+        # Definir lado com base na direção do vetor
+        if config["side"] == "left":
+            resultado = cross > 0
+            print(f"[DEBUG] Side=left, cross>0? {resultado}")
+            return resultado
+        elif config["side"] == "right":
+            resultado = cross < 0
+            print(f"[DEBUG] Side=right, cross<0? {resultado}")
+            return resultado
+        elif config["side"] == "top":
+            resultado = cross > 0 if dy == 0 else cy < y1
+            print(f"[DEBUG] Side=top, resultado={resultado}")
+            return resultado
+        elif config["side"] == "bottom":
+            resultado = cross < 0 if dy == 0 else cy > y1
+            print(f"[DEBUG] Side=bottom, resultado={resultado}")
+            return resultado
+
+        print("[DEBUG] Nenhum lado válido encontrado, retornando False")
+        return False
+
+    elif config["type"] == "area":
+        polygon = np.array(config["polygon"], np.int32)
+        inside = cv2.pointPolygonTest(polygon, (cx, cy), False) >= 0
+        print(f"[DEBUG] Tipo area, ponto dentro do polígono? {inside}")
+        return inside
+
+    print("[DEBUG] Tipo desconhecido, retornando False")
+    return False
 
 
 def insert_rtsp_credentials(url_base, username, password):
@@ -28,7 +87,7 @@ def insert_rtsp_credentials(url_base, username, password):
 
 def get_rtsp_resolution(rtsp_url):
     cmd = [
-        "C:\\ffmpeg\\bin\\ffprobe.exe", "-v", "error", "-select_streams", "v:0",
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
         "-show_entries", "stream=width,height",
         "-of", "json", rtsp_url
     ]
@@ -96,7 +155,7 @@ class CameraThread(threading.Thread):
 
         width, height = resolution
         ffmpeg_cmd = [
-            "C:\\ffmpeg\\bin\\ffmpeg.exe", "-loglevel", "error", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
+            "ffmpeg", "-loglevel", "error", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
             "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
         ]
         proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
@@ -105,8 +164,10 @@ class CameraThread(threading.Thread):
         frame_count = 0
         last_sent = 0
         start_time = time.time()
+        person_detected = False
+        last_total_detections = 0
 
-        while self.running and (time.time() - start_time < 10):
+        while self.running and (time.time() - start_time < 20):
             frame = freshest.read()
             if frame is None:
                 continue
@@ -116,9 +177,9 @@ class CameraThread(threading.Thread):
 
             if frame_count % PROCESS_EVERY != 0:
                 # Desabilitado: Exibição do vídeo ao vivo
-                # cv2.imshow(f'{self.camera_name}', resized)
-                # if cv2.waitKey(1) & 0xFF == ord('q'):
-                #     break
+                cv2.imshow(f'{self.camera_name}', resized)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
                 continue
 
             result = model(resized, classes=[0], verbose=False)
@@ -136,14 +197,26 @@ class CameraThread(threading.Thread):
                         continue
 
                     x1, y1, x2, y2 = map(int, data.xyxy[0])
+                    center = ((x1 + x2) // 2, (y1 + y2) // 2)
+                    print(f"[DEBUG] Detecção: {label} com confiança {conf:.2f} na caixa {x1,y1,x2,y2} com centro {center}")
+
+                    zone_config = ZONES.get((self.dguard_camera_id, self.recorder_guid))
+                    print(f"[DEBUG] Configuração da zona para câmera {self.dguard_camera_id}, recorder {self.recorder_guid}: {zone_config}")
+
+                    if zone_config and not is_in_zone(center, zone_config):
+                        print(f"[DEBUG] Ponto fora da zona, ignorando detecção")
+                        continue  # Ignorar se fora da zona
+
                     # Desabilitado: Desenho de caixas e texto no frame
-                    # cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
-                    # cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
-                    #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
+                    cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
+                    cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
                     person_detected = True
                     total_detections += 1
 
-            print(f"[INFO] Detecções ({self.camera_name}): {total_detections}")
+            if total_detections != last_total_detections:
+                print(f"[INFO] Detecções ({self.camera_name}): {total_detections}")
+                last_total_detections = total_detections
 
             if person_detected:
                 current_time = time.time()
@@ -154,11 +227,16 @@ class CameraThread(threading.Thread):
                 break
 
             # Desabilitado: Exibição do frame processado
-            # cv2.imshow(f'{self.camera_name}', resized)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
+            cv2.imshow(f'{self.camera_name}', resized)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
         freshest.stop()
+
+        if person_detected:
+            print(f"[FIM] Thread finalizada para {self.camera_name} - DETECÇÃO REALIZADA.")
+        else:
+            print(f"[FIM] Thread finalizada para {self.camera_name} - NENHUMA DETECÇÃO.")
 
 
 def get_selected_cameras(camera_recorder_list):
@@ -204,6 +282,7 @@ def start_monitoring_cameras(camera_recorder_list):
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
         thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid)
+        print(f"[INÍCIO] Iniciando thread para câmera: {camera_name} (ID: {camera_id})")
         thread.start()
         threads.append(thread)
 
