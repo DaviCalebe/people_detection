@@ -11049,7 +11049,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=1&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=1&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11057,7 +11057,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=1&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=1&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11070,7 +11070,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=2&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=2&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11078,7 +11078,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=2&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=2&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11091,7 +11091,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=3&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=3&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11099,7 +11099,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=3&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=3&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11112,7 +11112,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=4&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=4&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11120,7 +11120,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=4&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=4&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11133,7 +11133,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=5&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=5&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11141,7 +11141,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=5&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=5&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11154,7 +11154,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=6&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=6&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11162,7 +11162,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=6&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=6&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11175,7 +11175,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=7&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=7&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11183,7 +11183,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=7&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=7&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11196,7 +11196,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=8&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=8&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11204,7 +11204,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=8&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=8&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11217,7 +11217,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=9&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=9&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11225,7 +11225,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=9&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=9&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11238,7 +11238,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=10&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=10&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11246,7 +11246,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=10&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=10&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11259,7 +11259,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=11&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=11&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11267,7 +11267,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=11&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=11&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11280,7 +11280,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=12&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=12&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11288,7 +11288,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=12&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=12&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11301,7 +11301,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=13&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=13&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11309,7 +11309,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=13&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=13&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11322,7 +11322,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=14&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=14&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11330,7 +11330,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=14&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=14&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11343,7 +11343,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=15&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=15&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11351,7 +11351,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=15&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=15&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11364,7 +11364,7 @@
                                 {
                                     "streamId": 0,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=16&subtype=0",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=16&subtype=0",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
@@ -11372,7 +11372,7 @@
                                 {
                                     "streamId": 1,
                                     "remoteUrl": {
-                                        "url": "rtsp://177.36.14.185:34965/cam/realmonitor?channel=16&subtype=1",
+                                        "url": "rtsp://192.168.58.254:80/cam/realmonitor?channel=16&subtype=1",
                                         "username": "dguard",
                                         "password": "monitoramento@CFTV2024"
                                     }
