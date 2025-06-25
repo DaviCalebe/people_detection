@@ -2,6 +2,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+from datetime import datetime
 import cv2
 import json
 import numpy as np
@@ -15,6 +16,7 @@ RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 PROCESS_EVERY = 5
 event_delay = 30
+timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
 
 model = YOLO('models/yolov8n.pt')
 
@@ -26,42 +28,33 @@ with open('zones.json', 'r') as f:
 
 def is_in_zone(center, config):
     cx, cy = center
-    print(f"[DEBUG] is_in_zone chamado com center={center} e config={config}")
 
     if config["type"] == "side":
         (x1, y1), (x2, y2) = config["line"]
-        print(f"[DEBUG] Linha: ({x1},{y1}) -> ({x2},{y2})")
 
         # Vetor da linha
         dx = x2 - x1
         dy = y2 - y1
-        print(f"[DEBUG] Vetor linha dx={dx}, dy={dy}")
 
         # Vetor do ponto em relação ao ponto inicial da linha
         dxp = cx - x1
         dyp = cy - y1
-        print(f"[DEBUG] Vetor ponto dxp={dxp}, dyp={dyp}")
 
         # Produto vetorial (para saber de que lado da linha está)
         cross = dx * dyp - dy * dxp
-        print(f"[DEBUG] Produto vetorial (cross) = {cross}")
 
         # Definir lado com base na direção do vetor
         if config["side"] == "left":
             resultado = cross > 0
-            print(f"[DEBUG] Side=left, cross>0? {resultado}")
             return resultado
         elif config["side"] == "right":
             resultado = cross < 0
-            print(f"[DEBUG] Side=right, cross<0? {resultado}")
             return resultado
         elif config["side"] == "top":
             resultado = cross > 0 if dy == 0 else cy < y1
-            print(f"[DEBUG] Side=top, resultado={resultado}")
             return resultado
         elif config["side"] == "bottom":
             resultado = cross < 0 if dy == 0 else cy > y1
-            print(f"[DEBUG] Side=bottom, resultado={resultado}")
             return resultado
 
         print("[DEBUG] Nenhum lado válido encontrado, retornando False")
@@ -70,7 +63,6 @@ def is_in_zone(center, config):
     elif config["type"] == "area":
         polygon = np.array(config["polygon"], np.int32)
         inside = cv2.pointPolygonTest(polygon, (cx, cy), False) >= 0
-        print(f"[DEBUG] Tipo area, ponto dentro do polígono? {inside}")
         return inside
 
     print("[DEBUG] Tipo desconhecido, retornando False")
@@ -198,13 +190,10 @@ class CameraThread(threading.Thread):
 
                     x1, y1, x2, y2 = map(int, data.xyxy[0])
                     center = ((x1 + x2) // 2, (y1 + y2) // 2)
-                    print(f"[DEBUG] Detecção: {label} com confiança {conf:.2f} na caixa {x1,y1,x2,y2} com centro {center}")
 
                     zone_config = ZONES.get((self.dguard_camera_id, self.recorder_guid))
-                    print(f"[DEBUG] Configuração da zona para câmera {self.dguard_camera_id}, recorder {self.recorder_guid}: {zone_config}")
 
                     if zone_config and not is_in_zone(center, zone_config):
-                        print(f"[DEBUG] Ponto fora da zona, ignorando detecção")
                         continue  # Ignorar se fora da zona
 
                     # Desabilitado: Desenho de caixas e texto no frame
@@ -234,9 +223,9 @@ class CameraThread(threading.Thread):
         freshest.stop()
 
         if person_detected:
-            print(f"[FIM] Thread finalizada para {self.camera_name} - DETECÇÃO REALIZADA.")
+            print(f"[FIM] Thread finalizada para {self.camera_name} - DETECÇÃO REALIZADA. ({timestamp})")
         else:
-            print(f"[FIM] Thread finalizada para {self.camera_name} - NENHUMA DETECÇÃO.")
+            print(f"[FIM] Thread finalizada para {self.camera_name} - NENHUMA DETECÇÃO. ({timestamp})")
 
 
 def get_selected_cameras(camera_recorder_list):
@@ -282,7 +271,7 @@ def start_monitoring_cameras(camera_recorder_list):
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
         thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid)
-        print(f"[INÍCIO] Iniciando thread para câmera: {camera_name} (ID: {camera_id})")
+        print(f"[INÍCIO - {timestamp}] Iniciando thread para câmera: {camera_name} (ID: {camera_id})")
         thread.start()
         threads.append(thread)
 
