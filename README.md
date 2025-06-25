@@ -20,7 +20,7 @@
    ```bash
    winget install ffmpeg
 
-   ## Caso queira rodar o YOLO pela GPU(opcional):
+## Caso queira rodar o YOLO pela GPU(opcional):
    ```bash
    pip install torch==2.7.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
 
