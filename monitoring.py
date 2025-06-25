@@ -16,7 +16,6 @@ RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 PROCESS_EVERY = 5
 event_delay = 30
-timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
 
 model = YOLO('models/yolov8n.pt')
 
@@ -222,6 +221,8 @@ class CameraThread(threading.Thread):
 
         freshest.stop()
 
+        timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
+
         if person_detected:
             print(f"[FIM] Thread finalizada para {self.camera_name} - DETECÇÃO REALIZADA. ({timestamp})")
         else:
@@ -271,6 +272,7 @@ def start_monitoring_cameras(camera_recorder_list):
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
         thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid)
+        timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
         print(f"[INÍCIO - {timestamp}] Iniciando thread para câmera: {camera_name} (ID: {camera_id})")
         thread.start()
         threads.append(thread)
