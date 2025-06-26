@@ -9,10 +9,12 @@ import numpy as np
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 
+
 def load_zones(json_path='zones.json'):
     with open(json_path, 'r') as f:
         raw = json.load(f)
         return {literal_eval(k): v for k, v in raw.items()}
+
 
 def get_rtsp_from_db(camera_id, recorder_guid):
     conn = sqlite3.connect('database.db')
@@ -37,7 +39,9 @@ def get_rtsp_from_db(camera_id, recorder_guid):
     netloc = f"{username}:{password}@{parsed.hostname}"
     if parsed.port:
         netloc += f":{parsed.port}"
+    print(url, netloc)
     return urlunparse(parsed._replace(netloc=netloc))
+
 
 def draw_side_text_at_side(image, pt1, pt2, side):
     # ponto médio da linha
