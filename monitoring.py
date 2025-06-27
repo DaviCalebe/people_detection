@@ -4,6 +4,7 @@ import threading
 import time
 import cv2
 import json
+import os
 import logging
 import numpy as np
 from datetime import datetime
@@ -12,15 +13,19 @@ from ast import literal_eval
 from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
+# Caminho para salvar os logs fora do projeto
+log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
+
 # Configurar o nome do arquivo de log com data/hora
-log_filename = f"logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+log_filename = os.path.join(log_dir, f"logs_{datetime.now().strftime('%d-%m-%Y')}.txt")
 
 # Criar o logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Criar formatador com timestamp
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
 
 # Handler para arquivo
 file_handler = logging.FileHandler(log_filename, encoding='utf-8')
@@ -155,19 +160,20 @@ class FreshestFFmpegFrame(threading.Thread):
 
 
 class CameraThread(threading.Thread):
-    def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid):
+    def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
         super().__init__()
         self.rtsp_url = rtsp_url
         self.camera_name = camera_name
         self.camera_id = camera_id
         self.dguard_camera_id = dguard_camera_id
         self.recorder_guid = recorder_guid
+        self.recorder_name = recorder_name
         self.running = True
 
     def run(self):
         resolution = get_rtsp_resolution(self.rtsp_url)
         if not resolution:
-            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_name}.")
+            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_name} ({self.recorder_name}).")
             return
 
         width, height = resolution
@@ -175,8 +181,40 @@ class CameraThread(threading.Thread):
             "ffmpeg", "-loglevel", "error", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
             "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
         ]
-        proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**8)
+
+        proc = subprocess.Popen(
+            ffmpeg_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=10**8,
+            text=False
+        )
         freshest = FreshestFFmpegFrame(proc, width, height)
+
+        def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name):
+            erro_pps_detectado = False
+
+            for line in iter(stderr_pipe.readline, b''):
+                decoded_line = line.decode('utf-8', errors='ignore').strip()
+
+                # Detectar erro de PPS ausente (e seus efeitos em cascata)
+                if "non-existing PPS" in decoded_line:
+                    if not erro_pps_detectado:
+                        logger.error(f"{camera_name} ({recorder_name}) Erro crítico: PPS ausente no stream RTSP. Ignorando mensagens repetidas.")
+                        erro_pps_detectado = True
+                    continue
+
+                # Ignorar mensagens esperadas após o erro de PPS
+                if erro_pps_detectado and any(x in decoded_line for x in [
+                    "decode_slice_header error",
+                    "no frame!",
+                    "Error submitting packet",
+                    "Invalid data found"
+                ]):
+                    continue
+
+                # Logar outras mensagens normalmente
+                logger.error(f"{camera_name} ({recorder_name}) {decoded_line}")
 
         frame_count = 0
         last_sent = 0
@@ -229,13 +267,12 @@ class CameraThread(threading.Thread):
                     total_detections += 1
 
             if total_detections != last_total_detections:
-                print(f"[INFO] Detecções ({self.camera_name}): {total_detections}")
                 last_total_detections = total_detections
 
             if person_detected:
                 current_time = time.time()
                 if current_time - last_sent >= event_delay:
-                    print(f"[ALERTA] Pessoa detectada! ({self.camera_name})")
+                    print(f"[WARNING] Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
                     set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     last_sent = current_time
                 break
@@ -247,12 +284,10 @@ class CameraThread(threading.Thread):
 
         freshest.stop()
 
-        timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
-
         if person_detected:
-            print(f"[FIM] Thread finalizada para {self.camera_name} - DETECÇÃO REALIZADA. ({timestamp})")
+            print(f"DETECÇÃO REALIZADA para {self.camera_name} ({self.recorder_name})")
         else:
-            print(f"[FIM] Thread finalizada para {self.camera_name} - NENHUMA DETECÇÃO. ({timestamp})")
+            print(f"NENHUMA DETECÇÃO para {self.camera_name} ({self.recorder_name})")
 
 
 def get_selected_cameras(camera_recorder_list):
@@ -273,7 +308,15 @@ def get_selected_cameras(camera_recorder_list):
         params.extend([cam_id, rec_guid])
 
     query = f"""
-        SELECT c.id, c.camera_id AS dguard_camera_id, c.name, s.url, s.username, s.password, r.guid
+        SELECT
+            c.id,
+            c.camera_id AS dguard_camera_id,
+            c.name,
+            s.url,
+            s.username,
+            s.password,
+            r.guid,
+            r.name AS recorder_name
         FROM cameras c
         JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
         JOIN recorders r ON c.recorder_id = r.id
@@ -295,11 +338,10 @@ def start_monitoring_cameras(camera_recorder_list):
     cameras = get_selected_cameras(camera_recorder_list)
     threads = []
 
-    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid) in cameras:
+    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-        thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid)
-        timestamp = datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
-        print(f"[INÍCIO - {timestamp}] Iniciando thread para câmera: {camera_name} (ID: {camera_id})")
+        thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
+        print(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
         thread.start()
         threads.append(thread)
 
