@@ -2,14 +2,40 @@ import sqlite3
 import subprocess
 import threading
 import time
-from datetime import datetime
 import cv2
 import json
+import logging
 import numpy as np
+from datetime import datetime
 from urllib.parse import urlparse, urlunparse
-from ast import literal_eval   # <-- importar literal_eval para converter as keys
+from ast import literal_eval
 from ultralytics import YOLO
 from events.scheduler import set_event_schedule
+
+# Configurar o nome do arquivo de log com data/hora
+log_filename = f"logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+# Criar o logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Criar formatador com timestamp
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Handler para arquivo
+file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+file_handler.setFormatter(formatter)
+
+# Handler para terminal
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+
+# Adicionar os handlers ao logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+# Substituir print por logging.info (ou warning/error etc)
+print = logger.info  # Redireciona todos os print() para logging.info()
 
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640

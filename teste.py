@@ -100,6 +100,7 @@ def draw_side_text_at_side(image, pt1, pt2, side):
 
     cv2.putText(image, side, (text_x, text_y), font, font_scale, (0, 255, 0), thickness)
 
+
 def main():
     camera_id = int(input("Digite o camera_id: ").strip())
     recorder_guid = input("Digite o recorder_guid: ").strip()
@@ -160,6 +161,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
