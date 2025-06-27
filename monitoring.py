@@ -14,7 +14,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -189,23 +189,22 @@ class CameraThread(threading.Thread):
             bufsize=10**8,
             text=False
         )
+
         freshest = FreshestFFmpegFrame(proc, width, height)
 
         def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name):
-            erro_pps_detectado = False
+            pps_error_detected = False
 
             for line in iter(stderr_pipe.readline, b''):
                 decoded_line = line.decode('utf-8', errors='ignore').strip()
 
-                # Detectar erro de PPS ausente (e seus efeitos em cascata)
                 if "non-existing PPS" in decoded_line:
-                    if not erro_pps_detectado:
-                        logger.error(f"{camera_name} ({recorder_name}) Erro crítico: PPS ausente no stream RTSP. Ignorando mensagens repetidas.")
-                        erro_pps_detectado = True
+                    if not pps_error_detected:
+                        logger.error(f"{camera_name} ({recorder_name}): PPS ausente no stream RTSP. Ignorando mensagens repetidas.")
+                        pps_error_detected = True
                     continue
 
-                # Ignorar mensagens esperadas após o erro de PPS
-                if erro_pps_detectado and any(x in decoded_line for x in [
+                if pps_error_detected and any(x in decoded_line for x in [
                     "decode_slice_header error",
                     "no frame!",
                     "Error submitting packet",
@@ -213,8 +212,14 @@ class CameraThread(threading.Thread):
                 ]):
                     continue
 
-                # Logar outras mensagens normalmente
                 logger.error(f"{camera_name} ({recorder_name}) {decoded_line}")
+
+        error_thread = threading.Thread(
+            target=log_ffmpeg_errors,
+            args=(proc.stderr, self.camera_name, self.recorder_name),
+            daemon=True
+        )
+        error_thread.start()
 
         frame_count = 0
         last_sent = 0
