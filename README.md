@@ -28,3 +28,8 @@
    
    ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000
+
+## Exemplo de requisição POST para API
+
+   ```bash
+   curl -X POST "http://localhost:8000/set-cameras" -H "Content-Type: application/json" -d "{\"camera_id\":3,\"recorder_guid\":\"{B54AE1B4-CCB8-4D80-9E85-4A7593FF789C}\"}"
