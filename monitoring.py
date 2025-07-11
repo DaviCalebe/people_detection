@@ -42,7 +42,7 @@ logger.addHandler(console_handler)
 # Substituir print por logging.info (ou warning/error etc)
 print = logger.info  # Redireciona todos os print() para logging.info()
 
-SHOW_VIDEO = False
+SHOW_VIDEO = True
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
@@ -170,35 +170,56 @@ class CameraThread(threading.Thread):
         self.recorder_guid = recorder_guid
         self.recorder_name = recorder_name
         self.running = True
+        self.error_event_sent = False
+
+    def trigger_error_event(self, reason):
+        if not self.error_event_sent:
+            logger.warning(f"[{self.camera_name} - {self.recorder_name}] Acionando evento por erro: {reason}")
+            set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+            self.error_event_sent = True
 
     def run(self):
         resolution = get_rtsp_resolution(self.rtsp_url)
         if not resolution:
-            print(f"Erro ao obter resolução do RTSP para a câmera {self.camera_name} ({self.recorder_name}).")
+            self.trigger_error_event("Falha ao obter resolução RTSP")
             return
 
         width, height = resolution
         ffmpeg_cmd = [
-            "ffmpeg", "-loglevel", "error", "-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental",
-            "-rtsp_transport", "tcp", "-i", self.rtsp_url, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"
+            "ffmpeg",
+            "-loglevel", "error",
+            "-fflags", "nobuffer",
+            "-flags", "low_delay",
+            "-rtsp_transport", "tcp",
+            "-i", self.rtsp_url,
+            "-f", "rawvideo",
+            "-pix_fmt", "bgr24",
+            "-"
         ]
 
         proc = subprocess.Popen(
             ffmpeg_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            bufsize=10**8,
+            bufsize=4096,
             text=False
         )
 
+        if proc.stdout is None or proc.stderr is None:
+            self.trigger_error_event("FFmpeg não iniciou corretamente")
+            return
+
         freshest = FreshestFFmpegFrame(proc, width, height)
 
-        def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name):
+        def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name, dguard_camera_id, recorder_guid):
             pps_error_detected = False
+            ref_error_detected = False
+            disconnect_error_detected = False
 
             for line in iter(stderr_pipe.readline, b''):
                 decoded_line = line.decode('utf-8', errors='ignore').strip()
 
+                # Tratamento PPS ausente
                 if "non-existing PPS" in decoded_line:
                     if not pps_error_detected:
                         logger.error(f"{camera_name} ({recorder_name}): PPS ausente no stream RTSP. Ignorando mensagens repetidas.")
@@ -213,87 +234,133 @@ class CameraThread(threading.Thread):
                 ]):
                     continue
 
+                # Tratamento referência de frame ausente
+                if "reference picture missing" in decoded_line or "Missing reference picture" in decoded_line:
+                    if not ref_error_detected:
+                        logger.error(f"{camera_name} ({recorder_name}): Referência de frame ausente. Ignorando mensagens repetidas.")
+                        ref_error_detected = True
+                    continue
+
+                if ref_error_detected and any(x in decoded_line for x in [
+                    "decode_slice_header error",
+                    "bytestream",
+                    "Missing reference picture",
+                    "no frame!",
+                    "Invalid data found"
+                ]):
+                    continue
+
+                # Tratamento específico para desconexão remota -10054
+                if "Error number -10054" in decoded_line:
+                    if not disconnect_error_detected:
+                        logger.error(f"{camera_name} ({recorder_name}): Desconexão remota detectada (Error number -10054).")
+                        disconnect_error_detected = True
+                        set_event_schedule(dguard_camera_id, recorder_guid)
+                    continue
+
+                # Log geral para outras mensagens de erro e acionamento de evento
                 logger.error(f"{camera_name} ({recorder_name}) {decoded_line}")
+                set_event_schedule(dguard_camera_id, recorder_guid)
 
         error_thread = threading.Thread(
             target=log_ffmpeg_errors,
-            args=(proc.stderr, self.camera_name, self.recorder_name),
+            args=(proc.stderr, self.camera_name, self.recorder_name, self.dguard_camera_id, self.recorder_guid),
             daemon=True
         )
         error_thread.start()
 
-        frame_count = 0
-        last_sent = 0
-        start_time = time.time()
-        person_detected = False
-        last_total_detections = 0
+        try:
+            frame_count = 0
+            last_sent = 0
+            person_detected = False
+            last_total_detections = 0
 
-        while self.running and (time.time() - start_time < 20):
-            frame = freshest.read()
-            if frame is None:
-                continue
+            no_frame_start = time.time()
+            start_time = None
+            thread_start_time = time.time()
 
-            frame_count += 1
-            resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
+            while self.running and (time.time() - thread_start_time < 20):
+                frame = freshest.read()
 
-            if frame_count % PROCESS_EVERY != 0:
+                if frame is None:
+                    if time.time() - no_frame_start > 10:
+                        self.trigger_error_event("Sem frames válidos por 10s")
+                        break
+                    continue
+                else:
+                    if start_time is None:
+                        start_time = time.time()
+                    no_frame_start = time.time()
+
+                if time.time() - start_time > 5:
+                    break
+
+                frame_count += 1
+                resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
+
+                if frame_count % PROCESS_EVERY != 0:
+                    if SHOW_VIDEO:
+                        cv2.imshow(f'{self.camera_name}', resized)
+                        if cv2.waitKey(1) & 0xFF == ord('q'):
+                            break
+                    continue
+
+                result = model(resized, classes=[0], verbose=False)
+
+                person_detected = False
+                total_detections = 0
+
+                for objects in result:
+                    for data in objects.boxes:
+                        conf = float(data.conf[0])
+                        cls_id = int(data.cls[0])
+                        label = model.names[cls_id]
+
+                        if label != 'person' or conf < CONFIDENCE_THRESHOLD:
+                            continue
+
+                        x1, y1, x2, y2 = map(int, data.xyxy[0])
+                        center = ((x1 + x2) // 2, (y1 + y2) // 2)
+
+                        zone_config = ZONES.get((self.dguard_camera_id, self.recorder_guid))
+
+                        if zone_config and not is_in_zone(center, zone_config):
+                            continue
+
+                        if SHOW_VIDEO:
+                            cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
+                            cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
+                        person_detected = True
+                        total_detections += 1
+
+                if total_detections != last_total_detections:
+                    last_total_detections = total_detections
+
+                if person_detected:
+                    current_time = time.time()
+                    if current_time - last_sent >= event_delay:
+                        print(f"[WARNING] Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
+                        set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+                        last_sent = current_time
+                    break
+
                 if SHOW_VIDEO:
                     cv2.imshow(f'{self.camera_name}', resized)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                continue
-
-            result = model(resized, classes=[0], verbose=False)
-
-            person_detected = False
-            total_detections = 0
-
-            for objects in result:
-                for data in objects.boxes:
-                    conf = float(data.conf[0])
-                    cls_id = int(data.cls[0])
-                    label = model.names[cls_id]
-
-                    if label != 'person' or conf < CONFIDENCE_THRESHOLD:
-                        continue
-
-                    x1, y1, x2, y2 = map(int, data.xyxy[0])
-                    center = ((x1 + x2) // 2, (y1 + y2) // 2)
-
-                    zone_config = ZONES.get((self.dguard_camera_id, self.recorder_guid))
-
-                    if zone_config and not is_in_zone(center, zone_config):
-                        continue  # Ignorar se fora da zona
-
-                    if SHOW_VIDEO:
-                        cv2.rectangle(resized, (x1, y1), (x2, y2), (251, 226, 0), 5)
-                        cv2.putText(resized, f'{label} {conf:.2f}', (x1, y1 - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
-                    person_detected = True
-                    total_detections += 1
-
-            if total_detections != last_total_detections:
-                last_total_detections = total_detections
 
             if person_detected:
-                current_time = time.time()
-                if current_time - last_sent >= event_delay:
-                    print(f"[WARNING] Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
-                    set_event_schedule(self.dguard_camera_id, self.recorder_guid)
-                    last_sent = current_time
-                break
+                print(f"DETECÇÃO REALIZADA para {self.camera_name} ({self.recorder_name})")
+            else:
+                print(f"NENHUMA DETECÇÃO para {self.camera_name} ({self.recorder_name})")
 
-            if SHOW_VIDEO:
-                cv2.imshow(f'{self.camera_name}', resized)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+        except Exception as e:
+            logger.exception(f"Erro inesperado em {self.camera_name} ({self.recorder_name}): {e}")
+            self.trigger_error_event("Erro inesperado na thread da câmera")
 
-        freshest.stop()
-
-        if person_detected:
-            print(f"DETECÇÃO REALIZADA para {self.camera_name} ({self.recorder_name})")
-        else:
-            print(f"NENHUMA DETECÇÃO para {self.camera_name} ({self.recorder_name})")
+        finally:
+            freshest.stop()
 
 
 def get_selected_cameras(camera_recorder_list):
@@ -335,6 +402,44 @@ def get_selected_cameras(camera_recorder_list):
     return results
 
 
+def get_selected_cameras_with_fallback(camera_recorder_list):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    if not camera_recorder_list:
+        return []
+
+    or_clauses = []
+    params = []
+    for cam_id, rec_guid in camera_recorder_list:
+        or_clauses.append("(c.camera_id = ? AND r.guid = ?)")
+        params.extend([cam_id, rec_guid])
+
+    # Buscar streams de ambas as IDs (0 e 1), e ordenar para termos sempre principal e extra
+    query = f"""
+        SELECT
+            c.id,
+            c.camera_id AS dguard_camera_id,
+            c.name,
+            s.url,
+            s.username,
+            s.password,
+            r.guid,
+            r.name AS recorder_name,
+            s.stream_id
+        FROM cameras c
+        JOIN streams s ON s.camera_id = c.id AND s.stream_id IN (0,1)
+        JOIN recorders r ON c.recorder_id = r.id
+        WHERE {" OR ".join(or_clauses)} AND s.url != 'indisponível'
+        ORDER BY c.id, s.stream_id DESC  -- Ordena para priorizar stream extra (1) antes da principal (0)
+    """
+
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+
 def start_monitoring_cameras(camera_recorder_list):
     """
     camera_recorder_list: list of tuples (camera_id:int, recorder_guid:str)
@@ -348,6 +453,52 @@ def start_monitoring_cameras(camera_recorder_list):
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
         thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
         print(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
+        thread.start()
+        threads.append(thread)
+
+    return threads
+
+
+def start_monitoring_cameras_with_fallback(camera_recorder_list):
+    cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
+    threads = []
+
+    # Agrupa dados por câmera
+    cameras_dict = {}
+    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name, stream_id) in cameras_raw:
+        key = (camera_id, recorder_guid)
+        if key not in cameras_dict:
+            cameras_dict[key] = {
+                "camera_id": camera_id,
+                "dguard_camera_id": dguard_camera_id,
+                "camera_name": camera_name,
+                "recorder_guid": recorder_guid,
+                "recorder_name": recorder_name,
+                "streams": {}
+            }
+        cameras_dict[key]["streams"][stream_id] = (rtsp_url, username, password)
+
+    # Para cada câmera, tenta usar stream extra (1), se não existir, usa principal (0)
+    for cam_key, cam_data in cameras_dict.items():
+        streams = cam_data["streams"]
+        if 1 in streams:
+            rtsp_url, username, password = streams[1]
+            print(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+        elif 0 in streams:
+            rtsp_url, username, password = streams[0]
+            print(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+        else:
+            print(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            continue  # pula câmera sem stream
+
+        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
+
+        thread = CameraThread(full_rtsp_url,
+                              cam_data["camera_name"],
+                              cam_data["camera_id"],
+                              cam_data["dguard_camera_id"],
+                              cam_data["recorder_guid"],
+                              cam_data["recorder_name"])
         thread.start()
         threads.append(thread)
 

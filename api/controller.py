@@ -1,5 +1,5 @@
 import threading
-from monitoring import start_monitoring_cameras
+from monitoring import start_monitoring_cameras_with_fallback
 
 # Para controlar threads abertas e evitar conflitos, vamos guardar as threads ativas
 active_threads = []
@@ -9,7 +9,7 @@ async def handle_set_cameras(camera_id: int, recorder_guid: str):
     cameras_to_start = [(camera_id, recorder_guid)]
 
     # Iniciar monitoramento das câmeras recebidas
-    threads = start_monitoring_cameras(cameras_to_start)
+    threads = start_monitoring_cameras_with_fallback(cameras_to_start)
 
     # Guardar as threads ativas para controle futuro, caso queira parar depois
     active_threads.extend(threads)
