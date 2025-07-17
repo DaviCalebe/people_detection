@@ -275,25 +275,27 @@ class CameraThread(threading.Thread):
             person_detected = False
             last_total_detections = 0
 
-            no_frame_start = time.time()
-            start_time = None
+            # no_frame_start = time.time()
+            # start_time = None
             thread_start_time = time.time()
 
             while self.running and (time.time() - thread_start_time < 20):
                 frame = freshest.read()
 
                 if frame is None:
-                    if time.time() - no_frame_start > 10:
-                        self.trigger_error_event("Sem frames válidos por 10s")
-                        break
                     continue
-                else:
-                    if start_time is None:
-                        start_time = time.time()
-                    no_frame_start = time.time()
+                # if frame is None:
+                #     if time.time() - no_frame_start > 10:
+                #         self.trigger_error_event("Sem frames válidos por 10s")
+                #         break
+                #     continue
+                # else:
+                #     if start_time is None:
+                #         start_time = time.time()
+                #     no_frame_start = time.time()
 
-                if time.time() - start_time > 5:
-                    break
+                # if time.time() - start_time > 5:
+                #     break
 
                 frame_count += 1
                 resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
