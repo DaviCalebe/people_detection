@@ -1,0 +1,360 @@
+[
+    {
+        "name": "PR_CURITIBA_DVR_2",
+        "guid": "{8CA2FED6-F6DF-43D5-9B85-82876BFE9024}",
+        "cameras": [
+            {
+                "name": "canal_1",
+                "id": 0,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_2",
+                "id": 1,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_3",
+                "id": 2,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_4",
+                "id": 3,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_5",
+                "id": 4,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_6",
+                "id": 5,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_7",
+                "id": 6,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_8",
+                "id": 7,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_9",
+                "id": 8,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_10",
+                "id": 9,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_11",
+                "id": 10,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_12",
+                "id": 11,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_13",
+                "id": 12,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_14",
+                "id": 13,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_15",
+                "id": 14,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "canal_16",
+                "id": 15,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "null",
+                            "username": "null",
+                            "password": "null"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]

@@ -1,6 +1,6 @@
 from config.config import HEADERS
 from helpers.apiHelper import get
-from guids.server2_guids import SERVER2_BASE_URL
+from guids.station_guids import STATION_BASE_URL
 import json
 from datetime import datetime
 import os
@@ -37,7 +37,7 @@ def load_progress():
 
 def get_recorders():
     print("Fetching recorders...")
-    url = f"{SERVER2_BASE_URL}/servers"
+    url = f"{STATION_BASE_URL}/servers"
     response = get(url, headers=HEADERS)
     if not response:
         return []
@@ -55,7 +55,7 @@ def get_recorders():
 
 
 def get_cameras_by_recorder(recorder_guid, recorder_name):
-    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras"
+    url = f"{STATION_BASE_URL}/servers/{recorder_guid}/cameras"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro: sem resposta ao buscar câmeras do recorder {recorder_name} ({recorder_guid})")
@@ -73,7 +73,7 @@ def get_cameras_by_recorder(recorder_guid, recorder_name):
 
 
 def get_stream_ids(recorder_guid, camera_id, recorder_name, camera_name):
-    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams"
+    url = f"{STATION_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro: sem resposta ao buscar streams da câmera {camera_name} ({camera_id}) no recorder {recorder_name}")
@@ -90,7 +90,7 @@ def get_stream_ids(recorder_guid, camera_id, recorder_name, camera_name):
 
 
 def get_remote_url(recorder_guid, camera_id, stream_id, recorder_name, camera_name):
-    url = f"{SERVER2_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
+    url = f"{STATION_BASE_URL}/servers/{recorder_guid}/cameras/{camera_id}/streams/{stream_id}/remote-url"
     response = get(url, headers=HEADERS)
     if not response:
         print(f"⚠️ Erro ao buscar remoteUrl do stream {stream_id} da câmera {camera_name} no recorder {recorder_name}")
@@ -197,7 +197,7 @@ def build_full_recorder_list():
     return progress_data
 
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     data = build_full_recorder_list()
 
     # Exportar resultado final
@@ -207,3 +207,94 @@ if __name__ == "__main__":
     if os.path.exists(IN_PROGRESS_FILE):
         os.remove(IN_PROGRESS_FILE)
         print(f"🗑️ Progresso removido: {IN_PROGRESS_FILE}")
+ """
+
+
+def get_recorder_by_guid(guid):
+    url = f"{STATION_BASE_URL}/servers"
+    response = get(url, headers=HEADERS)
+    if not response:
+        return None
+
+    data = response.json()
+    for recorder in data.get("servers", []):
+        if recorder.get("guid") == guid:
+            return {
+                "name": recorder.get("name", "Indisponível"),
+                "guid": recorder.get("guid", "Indisponível")
+            }
+
+    return None
+
+
+def build_single_recorder_entry(recorder_guid):
+    recorder = get_recorder_by_guid(recorder_guid)
+    if not recorder:
+        print(f"❌ Recorder com GUID {recorder_guid} não encontrado.")
+        return None
+
+    recorder_entry = {
+        "name": recorder["name"],
+        "guid": recorder["guid"],
+        "cameras": []
+    }
+
+    try:
+        cameras = get_cameras_by_recorder(recorder["guid"], recorder["name"])
+    except Exception as e:
+        print(f"❌ Erro ao buscar câmeras do recorder {recorder['name']}: {e}")
+        return recorder_entry
+
+    for camera in cameras:
+        camera_entry = {
+            "name": camera.get("name", "Indisponível"),
+            "id": camera.get("id", "Indisponível"),
+            "streams": []
+        }
+
+        try:
+            stream_ids = get_stream_ids(recorder["guid"], camera["id"], recorder["name"], camera["name"])
+        except Exception as e:
+            print(f"❌ Erro ao buscar streams da câmera {camera['name']}: {e}")
+            stream_ids = []
+
+        if not stream_ids:
+            camera_entry["streams"].append({
+                "streamId": "Indisponível",
+                "remoteUrl": {
+                    "url": "Indisponível",
+                    "username": "Indisponível",
+                    "password": "Indisponível"
+                }
+            })
+        else:
+            for stream_id in stream_ids:
+                remote = get_remote_url(recorder["guid"], camera["id"], stream_id, recorder["name"], camera["name"]) or {}
+                if not remote.get("url"):
+                    remote = {
+                        "url": "Indisponível",
+                        "username": "Indisponível",
+                        "password": "Indisponível"
+                    }
+                camera_entry["streams"].append({
+                    "streamId": stream_id,
+                    "remoteUrl": remote
+                })
+
+        recorder_entry["cameras"].append(camera_entry)
+
+    return recorder_entry
+
+
+if __name__ == "__main__":
+    # Substitua pelo GUID do novo gravador
+    new_recorder_guid = "{8CA2FED6-F6DF-43D5-9B85-82876BFE9024}"
+
+    recorder_entry = build_single_recorder_entry(new_recorder_guid)
+    if recorder_entry:
+        export_to_json([recorder_entry], filename_prefix="new_recorder")
+
+        # Opcional: você pode também salvar no progresso acumulado se quiser
+        progress = load_progress()
+        progress.append(recorder_entry)
+        save_progress(progress)
