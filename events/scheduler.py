@@ -57,7 +57,7 @@ def set_event_schedule(camera_id, recorder_guid):
         "monitorId": 9,
         "shouldForceMonitor": True,
         "showLegend": True,
-        "legendText": "$event.name$",
+        "legendText": "$customevent.name$ - YOLO",
         "legendPosition": 0,
         "legendFontCode": 0,
         "legendFontSize": 0,
