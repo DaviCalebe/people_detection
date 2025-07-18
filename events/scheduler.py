@@ -25,30 +25,37 @@ def delay_deleting_event(formatted_time, delay_seconds=10):
     threading.Thread(target=delete, daemon=True).start()
 
 
-def set_event_schedule(camera_id, recorder_guid):
+def set_event_schedule(camera_id, recorder_guid, max_retries=3):
     now = datetime.now()
     scheduled_time = now + timedelta(seconds=10)
-    formatted_time = scheduled_time.strftime("%H:%M:%S")
 
-    # 1. Agendar evento
-    add_event_url = (
-        f"{STATION_BASE_URL}/custom-events/"
-        f"{STATION_PEOPLE_DETECTION_EVENT}/scheduled-times"
-    )
+    for attempt in range(max_retries):
+        formatted_time = scheduled_time.strftime("%H:%M:%S")
 
-    data = {"scheduledTime": formatted_time}
-    response = requests.post(add_event_url, headers=HEADERS, json=data, verify=False)
+        # 1. Agendar evento
+        add_event_url = (
+            f"{STATION_BASE_URL}/custom-events/"
+            f"{STATION_PEOPLE_DETECTION_EVENT}/scheduled-times"
+        )
 
-    if response.status_code in (200, 201):
-        print("Evento agendado com sucesso! Time sent:", data)
+        data = {"scheduledTime": formatted_time}
+        response = requests.post(add_event_url, headers=HEADERS, json=data, verify=False)
+
+        if response.status_code in (200, 201):
+            print("Evento agendado com sucesso! Time sent:", data)
+            break  # Sucesso, sai do loop
+        elif response.status_code == 422 and "Scheduled time already defined" in response.text:
+            print(f"Tentativa {attempt+1}: horário {formatted_time} já agendado, tentando +1s...")
+            scheduled_time += timedelta(seconds=1)  # Adiciona 1s e tenta novamente
+        else:
+            print(f"Erro ao agendar evento: {response.status_code} - {response.text} Time sent:", data)
+            return response, None
     else:
-        print(f"Erro ao agendar evento: {response.status_code} - {response.text} Time sent:", data)
+        print(f"Falha ao agendar evento após {max_retries} tentativas.")
         return response, None
 
     # 2. Ação fullscreen
-    update_camera_url = f"{STATION_BASE_URL}/event-actions/sources/{STATION_SOURCE}/actions/fullscreen-camera"
     update_camera_url = f"{STATION_BASE_URL}/event-actions/sources/{STATION_SOURCE_FULLTIME}/actions/fullscreen-camera"
-
 
     data = {
         "enabled": True,
