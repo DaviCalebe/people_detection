@@ -25,9 +25,9 @@ def delay_deleting_event(formatted_time, delay_seconds=10):
     threading.Thread(target=delete, daemon=True).start()
 
 
-def set_event_schedule(camera_id, recorder_guid, max_retries=3):
+def set_event_schedule(camera_id, recorder_guid, max_retries=5):
     now = datetime.now()
-    scheduled_time = now + timedelta(seconds=10)
+    scheduled_time = now  # + timedelta(seconds=5)
 
     for attempt in range(max_retries):
         formatted_time = scheduled_time.strftime("%H:%M:%S")
@@ -80,6 +80,6 @@ def set_event_schedule(camera_id, recorder_guid, max_retries=3):
         print(f"Erro ao agendar ação de câmera em tela cheia: {response.status_code} - {response.text}")
 
     # 3. Deletar evento depois, sem travar
-    delay_deleting_event(formatted_time, delay_seconds=20)
+    delay_deleting_event(formatted_time, delay_seconds=10)
 
     return response, None
