@@ -42,7 +42,7 @@ logger.addHandler(console_handler)
 # Substituir print por logging.info (ou warning/error etc)
 print = logger.info  # Redireciona todos os print() para logging.info()
 
-SHOW_VIDEO = True
+SHOW_VIDEO = False
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
@@ -114,16 +114,26 @@ def get_rtsp_resolution(rtsp_url):
         "-show_entries", "stream=width,height",
         "-of", "json", rtsp_url
     ]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if result.returncode != 0:
-        print("Erro ao executar ffprobe:", result.stderr)
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    except OSError as e:
+        logger.error(f"Erro ao executar ffprobe (OSError): {e}")
         return None
+    except Exception as e:
+        logger.error(f"Erro inesperado ao executar ffprobe: {e}")
+        return None
+
+    if result.returncode != 0:
+        logger.error(f"Erro ao executar ffprobe: {result.stderr.strip()}")
+        return None
+
     try:
         info = json.loads(result.stdout)
         return info["streams"][0]["width"], info["streams"][0]["height"]
-    except (KeyError, IndexError):
-        print("Não foi possível extrair resolução.")
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        logger.error(f"Não foi possível extrair resolução: {e}")
         return None
+
 
 
 class FreshestFFmpegFrame(threading.Thread):
