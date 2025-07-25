@@ -108,7 +108,7 @@ def insert_rtsp_credentials(url_base, username, password):
     return urlunparse(parsed._replace(netloc=netloc))
 
 
-def get_rtsp_resolution(rtsp_url):
+def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
     cmd = [
         "ffprobe", "-v", "error", "-select_streams", "v:0",
         "-show_entries", "stream=width,height",
@@ -117,11 +117,12 @@ def get_rtsp_resolution(rtsp_url):
     try:
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     except OSError as e:
-        logger.error(f"Erro ao executar ffprobe (OSError): {e}")
+        logger.error(f"[{camera_name} - {recorder_name}] Erro ao executar ffprobe (OSError): {e}")
         return None
     except Exception as e:
-        logger.error(f"Erro inesperado ao executar ffprobe: {e}")
+        logger.error(f"[{camera_name} - {recorder_name}] Erro inesperado ao executar ffprobe: {e}")
         return None
+
 
     if result.returncode != 0:
         logger.error(f"Erro ao executar ffprobe: {result.stderr.strip()}")
@@ -189,7 +190,7 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def run(self):
-        resolution = get_rtsp_resolution(self.rtsp_url)
+        resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
             self.trigger_error_event("Falha ao obter resolução RTSP")
             return
