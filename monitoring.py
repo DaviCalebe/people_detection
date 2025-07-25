@@ -6,6 +6,9 @@ import cv2
 import json
 import os
 import logging
+import platform
+import concurrent.futures
+import psutil
 import numpy as np
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
@@ -107,6 +110,18 @@ def insert_rtsp_credentials(url_base, username, password):
         netloc += f":{parsed.port}"
     return urlunparse(parsed._replace(netloc=netloc))
 
+def get_max_workers():
+    try:
+        if platform.system() != "Windows":
+            import resource
+            soft_limit, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
+            return max(1, soft_limit - 100)
+        else:
+            return 32
+    except:
+        return 32
+
+MAX_WORKERS = get_max_workers()
 
 def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
     cmd = [
@@ -454,30 +469,27 @@ def get_selected_cameras_with_fallback(camera_recorder_list):
 
 
 def start_monitoring_cameras(camera_recorder_list):
-    """
-    camera_recorder_list: list of tuples (camera_id:int, recorder_guid:str)
-    Inicia threads para monitorar cada câmera.
-    Retorna lista de threads iniciadas.
-    """
     cameras = get_selected_cameras(camera_recorder_list)
     threads = []
 
-    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
-        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-        thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
-        print(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
-        thread.start()
-        threads.append(thread)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = []
+        for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
+            full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
+            cam_thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
+            print(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
+            futures.append(executor.submit(cam_thread.start))
+            threads.append(cam_thread)
 
+    print(f"MAX_WORKERS usado: {MAX_WORKERS}")
     return threads
 
 
 def start_monitoring_cameras_with_fallback(camera_recorder_list):
     cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
     threads = []
-
-    # Agrupa dados por câmera
     cameras_dict = {}
+
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name, stream_id) in cameras_raw:
         key = (camera_id, recorder_guid)
         if key not in cameras_dict:
@@ -491,28 +503,50 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
             }
         cameras_dict[key]["streams"][stream_id] = (rtsp_url, username, password)
 
-    # Para cada câmera, tenta usar stream extra (1), se não existir, usa principal (0)
-    for cam_key, cam_data in cameras_dict.items():
-        streams = cam_data["streams"]
-        if 1 in streams:
-            rtsp_url, username, password = streams[1]
-            print(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-        elif 0 in streams:
-            rtsp_url, username, password = streams[0]
-            print(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-        else:
-            print(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-            continue  # pula câmera sem stream
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = []
+        for cam_key, cam_data in cameras_dict.items():
+            streams = cam_data["streams"]
+            if 1 in streams:
+                rtsp_url, username, password = streams[1]
+                print(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            elif 0 in streams:
+                rtsp_url, username, password = streams[0]
+                print(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            else:
+                print(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+                continue
 
-        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
+            full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
 
-        thread = CameraThread(full_rtsp_url,
-                              cam_data["camera_name"],
-                              cam_data["camera_id"],
-                              cam_data["dguard_camera_id"],
-                              cam_data["recorder_guid"],
-                              cam_data["recorder_name"])
-        thread.start()
-        threads.append(thread)
+            cam_thread = CameraThread(full_rtsp_url,
+                                      cam_data["camera_name"],
+                                      cam_data["camera_id"],
+                                      cam_data["dguard_camera_id"],
+                                      cam_data["recorder_guid"],
+                                      cam_data["recorder_name"])
+            futures.append(executor.submit(cam_thread.start))
+            threads.append(cam_thread)
 
+    print(f"MAX_WORKERS usado: {MAX_WORKERS}")
     return threads
+
+def monitorar_processo_periodicamente(intervalo_minutos=0.1):
+    import os
+
+    def monitor():
+        process = psutil.Process(os.getpid())
+        while True:
+            handles = process.num_handles() if hasattr(process, 'num_handles') else "N/A"
+            open_files = process.open_files()
+            num_threads = process.num_threads()
+            children = process.children()
+
+            logger.info(f"[MONITORAMENTO] Handles: {handles}, Threads: {num_threads}, "
+                        f"Subprocessos filhos: {len(children)}, Arquivos abertos: {len(open_files)}")
+            time.sleep(intervalo_minutos * 60)
+
+    t = threading.Thread(target=monitor, daemon=True)
+    t.start()
+
+monitorar_processo_periodicamente()
