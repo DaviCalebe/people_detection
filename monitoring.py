@@ -516,3 +516,33 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
         threads.append(thread)
 
     return threads
+
+def monitorar_abertura_de_arquivos(intervalo_minutos=0.1):
+    import os
+    import psutil
+
+    def monitor():
+        process = psutil.Process(os.getpid())
+        while True:
+            try:
+                handles = process.num_handles() if hasattr(process, 'num_handles') else -1
+                open_files = process.open_files()
+                num_open_files = len(open_files)
+                num_threads = process.num_threads()
+                children = process.children()
+
+                logger.info(
+                    f"[MONITORAMENTO] Handles: {handles}, "
+                    f"Threads: {num_threads}, "
+                    f"Arquivos abertos: {num_open_files}, "
+                    f"Subprocessos (prováveis FFmpeg): {len(children)}"
+                )
+            except Exception as e:
+                logger.warning(f"[MONITORAMENTO] Erro ao monitorar uso de recursos: {e}")
+
+            time.sleep(intervalo_minutos * 60)
+
+    t = threading.Thread(target=monitor, daemon=True)
+    t.start()
+
+monitorar_abertura_de_arquivos()
