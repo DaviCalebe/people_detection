@@ -112,14 +112,19 @@ def insert_rtsp_credentials(url_base, username, password):
 
 def get_max_workers():
     try:
-        if platform.system() != "Windows":
-            import resource
-            soft_limit, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
-            return max(1, soft_limit - 100)
-        else:
-            return 32
-    except:
-        return 32
+        import psutil
+        process = psutil.Process()
+        open_files = process.num_handles() if hasattr(process, 'num_handles') else 100
+
+        FILES_PER_CAMERA = 10
+        MAX_TOTAL_HANDLES = 800  # Valor seguro no Windows, pode ajustar
+
+        remaining = MAX_TOTAL_HANDLES - open_files
+        max_cameras = remaining // FILES_PER_CAMERA
+
+        return max(1, min(max_cameras, 32))  # nunca passa de 32
+    except Exception:
+        return 16
 
 MAX_WORKERS = get_max_workers()
 
@@ -531,22 +536,32 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
     print(f"MAX_WORKERS usado: {MAX_WORKERS}")
     return threads
 
-def monitorar_processo_periodicamente(intervalo_minutos=0.1):
+def monitorar_abertura_de_arquivos(intervalo_minutos=10):
     import os
+    import psutil
 
     def monitor():
         process = psutil.Process(os.getpid())
         while True:
-            handles = process.num_handles() if hasattr(process, 'num_handles') else "N/A"
-            open_files = process.open_files()
-            num_threads = process.num_threads()
-            children = process.children()
+            try:
+                handles = process.num_handles() if hasattr(process, 'num_handles') else -1
+                open_files = process.open_files()
+                num_open_files = len(open_files)
+                num_threads = process.num_threads()
+                children = process.children()
 
-            logger.info(f"[MONITORAMENTO] Handles: {handles}, Threads: {num_threads}, "
-                        f"Subprocessos filhos: {len(children)}, Arquivos abertos: {len(open_files)}")
+                logger.info(
+                    f"[MONITORAMENTO] Handles: {handles}, "
+                    f"Threads: {num_threads}, "
+                    f"Arquivos abertos: {num_open_files}, "
+                    f"Subprocessos (prováveis FFmpeg): {len(children)}"
+                )
+            except Exception as e:
+                logger.warning(f"[MONITORAMENTO] Erro ao monitorar uso de recursos: {e}")
+
             time.sleep(intervalo_minutos * 60)
 
     t = threading.Thread(target=monitor, daemon=True)
     t.start()
 
-monitorar_processo_periodicamente()
+monitorar_abertura_de_arquivos()
