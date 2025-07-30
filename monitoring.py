@@ -167,9 +167,32 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.proc.terminate()
-        self.join()
 
+        if self.proc:
+            try:
+                self.proc.terminate()
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                logger.warning(f"[FFMPEG] Processo não terminou a tempo. Forçando kill.")
+                self.proc.kill()
+            except Exception as e:
+                logger.error(f"[FFMPEG] Erro ao tentar parar FFmpeg: {e}")
+
+            if self.proc.stdout:
+                try:
+                    self.proc.stdout.close()
+                except Exception as e:
+                    logger.debug(f"[FFMPEG] Erro ao fechar stdout: {e}")
+            if self.proc.stderr:
+                try:
+                    self.proc.stderr.close()
+                except Exception as e:
+                    logger.debug(f"[FFMPEG] Erro ao fechar stderr: {e}")
+
+            self.proc = None
+
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=5)
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
@@ -516,33 +539,3 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
         threads.append(thread)
 
     return threads
-
-def monitorar_abertura_de_arquivos(intervalo_minutos=0.1):
-    import os
-    import psutil
-
-    def monitor():
-        process = psutil.Process(os.getpid())
-        while True:
-            try:
-                handles = process.num_handles() if hasattr(process, 'num_handles') else -1
-                open_files = process.open_files()
-                num_open_files = len(open_files)
-                num_threads = process.num_threads()
-                children = process.children()
-
-                logger.info(
-                    f"[MONITORAMENTO] Handles: {handles}, "
-                    f"Threads: {num_threads}, "
-                    f"Arquivos abertos: {num_open_files}, "
-                    f"Subprocessos (prováveis FFmpeg): {len(children)}"
-                )
-            except Exception as e:
-                logger.warning(f"[MONITORAMENTO] Erro ao monitorar uso de recursos: {e}")
-
-            time.sleep(intervalo_minutos * 60)
-
-    t = threading.Thread(target=monitor, daemon=True)
-    t.start()
-
-monitorar_abertura_de_arquivos()
