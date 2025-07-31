@@ -7,6 +7,7 @@ import json
 import os
 import logging
 import numpy as np
+from threading import Semaphore
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 from ast import literal_eval
@@ -45,6 +46,8 @@ RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 PROCESS_EVERY = 5
 event_delay = 30
+MAX_ACTIVE_CAMERAS = 100
+camera_semaphore = Semaphore(MAX_ACTIVE_CAMERAS)
 
 model = YOLO('models/yolov8n.pt')
 
@@ -211,10 +214,11 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def run(self):
-        resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
-        if not resolution:
-            self.trigger_error_event("Falha ao obter resolução RTSP")
-            return
+        with camera_semaphore:
+            resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
+            if not resolution:
+                self.trigger_error_event("Failed to get RTSP resolution")
+                return
 
         width, height = resolution
         ffmpeg_cmd = [
@@ -393,7 +397,7 @@ class CameraThread(threading.Thread):
 
         finally:
             freshest.stop()
-
+            logger.info(f"[TERMINATED] Thread finalizada para {self.camera_name} ({self.recorder_name})")
 
 def get_selected_cameras(camera_recorder_list):
     """
