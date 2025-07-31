@@ -146,6 +146,7 @@ class FreshestFFmpegFrame(threading.Thread):
         self.frame = None
         self.lock = threading.Lock()
         self.running = True
+        self.thread = None
         self.start()
 
     def run(self):
