@@ -146,7 +146,6 @@ class FreshestFFmpegFrame(threading.Thread):
         self.frame = None
         self.lock = threading.Lock()
         self.running = True
-        self.thread = None
         self.start()
 
     def run(self):
@@ -192,8 +191,9 @@ class FreshestFFmpegFrame(threading.Thread):
 
             self.proc = None
 
-        if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=5)
+        if self.is_alive():
+            self.join(timeout=5)
+
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
