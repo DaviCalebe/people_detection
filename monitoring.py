@@ -39,9 +39,6 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-# Substituir print por logging.info (ou warning/error etc)
-print = logger.info  # Redireciona todos os print() para logging.info()
-
 SHOW_VIDEO = False
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
@@ -377,8 +374,7 @@ class CameraThread(threading.Thread):
                 if person_detected:
                     current_time = time.time()
                     if current_time - last_sent >= event_delay:
-                        print(f"[WARNING] Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
-                        set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+                        logger.warning(f"Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
                         last_sent = current_time
                     break
 
@@ -387,10 +383,9 @@ class CameraThread(threading.Thread):
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 
-            if person_detected:
-                print(f"DETECÇÃO REALIZADA para {self.camera_name} ({self.recorder_name})")
-            else:
-                print(f"NENHUMA DETECÇÃO para {self.camera_name} ({self.recorder_name})")
+            status = "DETECÇÃO REALIZADA" if person_detected else "NENHUMA DETECÇÃO"
+            logger.info(f"{status} para {self.camera_name} ({self.recorder_name})")
+
 
         except Exception as e:
             logger.exception(f"Erro inesperado em {self.camera_name} ({self.recorder_name}): {e}")
@@ -489,7 +484,7 @@ def start_monitoring_cameras(camera_recorder_list):
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
         thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
-        print(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
+        logger.info(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
         thread.start()
         threads.append(thread)
 
@@ -520,13 +515,13 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
         streams = cam_data["streams"]
         if 1 in streams:
             rtsp_url, username, password = streams[1]
-            print(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            logger.info(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
         elif 0 in streams:
             rtsp_url, username, password = streams[0]
-            print(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            logger.info(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
         else:
-            print(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-            continue  # pula câmera sem stream
+            logger.warning(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
+            continue
 
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
 
