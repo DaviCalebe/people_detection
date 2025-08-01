@@ -397,46 +397,6 @@ class CameraThread(threading.Thread):
             freshest.stop()
             logger.info(f"[TERMINATED] Thread finalizada para {self.camera_name} ({self.recorder_name})")
 
-
-def get_selected_cameras(camera_recorder_list):
-    """
-    camera_recorder_list: list of tuples (camera_id:int, recorder_guid:str)
-    Retorna dados completos das câmeras (RTSP, nome, etc) do banco para as câmeras solicitadas.
-    """
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    if not camera_recorder_list:
-        return []
-
-    or_clauses = []
-    params = []
-    for cam_id, rec_guid in camera_recorder_list:
-        or_clauses.append("(c.camera_id = ? AND r.guid = ?)")
-        params.extend([cam_id, rec_guid])
-
-    query = f"""
-        SELECT
-            c.id,
-            c.camera_id AS dguard_camera_id,
-            c.name,
-            s.url,
-            s.username,
-            s.password,
-            r.guid,
-            r.name AS recorder_name
-        FROM cameras c
-        JOIN streams s ON s.camera_id = c.id AND s.stream_id = 0
-        JOIN recorders r ON c.recorder_id = r.id
-        WHERE {" OR ".join(or_clauses)} AND s.url != 'indisponível'
-    """
-
-    cursor.execute(query, params)
-    results = cursor.fetchall()
-    conn.close()
-    return results
-
-
 def get_selected_cameras_with_fallback(camera_recorder_list):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -474,24 +434,6 @@ def get_selected_cameras_with_fallback(camera_recorder_list):
     conn.close()
     return results
 
-
-def start_monitoring_cameras(camera_recorder_list):
-    cameras = get_selected_cameras(camera_recorder_list)
-    camera_threads = []
-
-    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
-        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-        cam_thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
-        camera_threads.append(cam_thread)
-
-    with ThreadPoolExecutor(max_workers=MAX_ACTIVE_CAMERAS) as executor:
-        for cam_thread in camera_threads:
-            logger.info(f"Iniciando thread para câmera: {cam_thread.camera_name} ({cam_thread.recorder_name})")
-            executor.submit(cam_thread.run)
-
-    return camera_threads
-
-
 def start_monitoring_cameras_with_fallback(camera_recorder_list):
     cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
 
@@ -512,7 +454,6 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
 
     # Criar instâncias de CameraThread
     camera_threads = []
-    logger.info(f"Total de câmeras para iniciar: {len(camera_threads)}")
 
     for cam_data in cameras_dict.values():
         streams = cam_data["streams"]
@@ -541,8 +482,6 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
         total_cameras = len(camera_threads)
         active_limit = min(MAX_ACTIVE_CAMERAS, total_cameras)
         queue_size = total_cameras - active_limit
-
-        logger.info(f"[STATUS] Câmeras ativas: {active_limit} / {total_cameras} | Em fila: {queue_size}")
 
         for cam_thread in camera_threads:
             logger.info(f"Iniciando thread para câmera: {cam_thread.camera_name} ({cam_thread.recorder_name})")
