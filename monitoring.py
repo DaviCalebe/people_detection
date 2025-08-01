@@ -7,7 +7,7 @@ import json
 import os
 import logging
 import numpy as np
-from threading import Semaphore
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 from ast import literal_eval
@@ -46,8 +46,7 @@ RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
 PROCESS_EVERY = 5
 event_delay = 30
-MAX_ACTIVE_CAMERAS = 100
-camera_semaphore = Semaphore(MAX_ACTIVE_CAMERAS)
+MAX_ACTIVE_CAMERAS = 10
 
 model = YOLO('models/yolov8n.pt')
 
@@ -214,11 +213,10 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def run(self):
-        with camera_semaphore:
-            resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
-            if not resolution:
-                self.trigger_error_event("Failed to get RTSP resolution")
-                return
+        resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
+        if not resolution:
+            self.trigger_error_event("Failed to get RTSP resolution")
+            return
 
         width, height = resolution
         ffmpeg_cmd = [
@@ -399,6 +397,7 @@ class CameraThread(threading.Thread):
             freshest.stop()
             logger.info(f"[TERMINATED] Thread finalizada para {self.camera_name} ({self.recorder_name})")
 
+
 def get_selected_cameras(camera_recorder_list):
     """
     camera_recorder_list: list of tuples (camera_id:int, recorder_guid:str)
@@ -477,29 +476,26 @@ def get_selected_cameras_with_fallback(camera_recorder_list):
 
 
 def start_monitoring_cameras(camera_recorder_list):
-    """
-    camera_recorder_list: list of tuples (camera_id:int, recorder_guid:str)
-    Inicia threads para monitorar cada câmera.
-    Retorna lista de threads iniciadas.
-    """
     cameras = get_selected_cameras(camera_recorder_list)
-    threads = []
+    camera_threads = []
 
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name) in cameras:
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-        thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
-        logger.info(f"Iniciando thread para câmera: {camera_name} ({recorder_name})")
-        thread.start()
-        threads.append(thread)
+        cam_thread = CameraThread(full_rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name)
+        camera_threads.append(cam_thread)
 
-    return threads
+    with ThreadPoolExecutor(max_workers=MAX_ACTIVE_CAMERAS) as executor:
+        for cam_thread in camera_threads:
+            logger.info(f"Iniciando thread para câmera: {cam_thread.camera_name} ({cam_thread.recorder_name})")
+            executor.submit(cam_thread.run)
+
+    return camera_threads
 
 
 def start_monitoring_cameras_with_fallback(camera_recorder_list):
     cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
-    threads = []
 
-    # Agrupa dados por câmera
+    # Agrupar por câmera
     cameras_dict = {}
     for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name, stream_id) in cameras_raw:
         key = (camera_id, recorder_guid)
@@ -514,8 +510,11 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
             }
         cameras_dict[key]["streams"][stream_id] = (rtsp_url, username, password)
 
-    # Para cada câmera, tenta usar stream extra (1), se não existir, usa principal (0)
-    for cam_key, cam_data in cameras_dict.items():
+    # Criar instâncias de CameraThread
+    camera_threads = []
+    logger.info(f"Total de câmeras para iniciar: {len(camera_threads)}")
+
+    for cam_data in cameras_dict.values():
         streams = cam_data["streams"]
         if 1 in streams:
             rtsp_url, username, password = streams[1]
@@ -529,13 +528,24 @@ def start_monitoring_cameras_with_fallback(camera_recorder_list):
 
         full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
 
-        thread = CameraThread(full_rtsp_url,
-                              cam_data["camera_name"],
-                              cam_data["camera_id"],
-                              cam_data["dguard_camera_id"],
-                              cam_data["recorder_guid"],
-                              cam_data["recorder_name"])
-        thread.start()
-        threads.append(thread)
+        cam_thread = CameraThread(full_rtsp_url,
+                                  cam_data["camera_name"],
+                                  cam_data["camera_id"],
+                                  cam_data["dguard_camera_id"],
+                                  cam_data["recorder_guid"],
+                                  cam_data["recorder_name"])
 
-    return threads
+        camera_threads.append(cam_thread)
+
+    with ThreadPoolExecutor(max_workers=MAX_ACTIVE_CAMERAS) as executor:
+        total_cameras = len(camera_threads)
+        active_limit = min(MAX_ACTIVE_CAMERAS, total_cameras)
+        queue_size = total_cameras - active_limit
+
+        logger.info(f"[STATUS] Câmeras ativas: {active_limit} / {total_cameras} | Em fila: {queue_size}")
+
+        for cam_thread in camera_threads:
+            logger.info(f"Iniciando thread para câmera: {cam_thread.camera_name} ({cam_thread.recorder_name})")
+            executor.submit(cam_thread.start)
+
+    return camera_threads
