@@ -14,7 +14,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -168,32 +168,8 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-
-        if self.proc:
-            try:
-                self.proc.terminate()
-                self.proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                logger.warning(f"[FFMPEG] Processo não terminou a tempo. Forçando kill.")
-                self.proc.kill()
-            except Exception as e:
-                logger.error(f"[FFMPEG] Erro ao tentar parar FFmpeg: {e}")
-
-            if self.proc.stdout:
-                try:
-                    self.proc.stdout.close()
-                except Exception as e:
-                    logger.debug(f"[FFMPEG] Erro ao fechar stdout: {e}")
-            if self.proc.stderr:
-                try:
-                    self.proc.stderr.close()
-                except Exception as e:
-                    logger.debug(f"[FFMPEG] Erro ao fechar stderr: {e}")
-
-            self.proc = None
-
-        if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=5)
+        self.proc.terminate()
+        self.join()
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
