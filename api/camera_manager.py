@@ -53,13 +53,19 @@ def cleanup_finished_threads():
             del active_threads[key]
 
 def camera_manager_loop():
+    previous_active_count = -1
+    previous_queue_count = -1
+
     while True:
         cleanup_finished_threads()
         active_count = get_active_count()
         queue_count = camera_queue.qsize()
-        
-        logger.info(f"[STATUS] Câmeras ativas: {active_count} / {MAX_ACTIVE_CAMERAS} | Em fila: {queue_count}")
-        
+
+        if active_count != previous_active_count or queue_count != previous_queue_count:
+            logger.info(f"[STATUS] Câmeras ativas: {active_count} / {MAX_ACTIVE_CAMERAS} | Em fila: {queue_count}")
+            previous_active_count = active_count
+            previous_queue_count = queue_count
+
         if active_count < MAX_ACTIVE_CAMERAS:
             try:
                 camera_id, recorder_guid = camera_queue.get(timeout=1)
@@ -68,7 +74,6 @@ def camera_manager_loop():
                 pass
         else:
             time.sleep(0.5)
-
 
 def start_camera_manager_thread():
     """Inicia a thread do gerenciador de câmeras."""

@@ -27,7 +27,7 @@ def delay_deleting_event(formatted_time, delay_seconds=10):
 
 def set_event_schedule(camera_id, recorder_guid, max_retries=5):
     now = datetime.now()
-    scheduled_time = now  # + timedelta(seconds=5)
+    scheduled_time = now + timedelta(seconds=5)
 
     for attempt in range(max_retries):
         formatted_time = scheduled_time.strftime("%H:%M:%S")

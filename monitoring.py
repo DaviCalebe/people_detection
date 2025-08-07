@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -166,32 +166,8 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-
-        if self.proc:
-            try:
-                self.proc.terminate()
-                self.proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                logger.warning(f"[FFMPEG] Processo não terminou a tempo. Forçando kill.")
-                self.proc.kill()
-            except Exception as e:
-                logger.error(f"[FFMPEG] Erro ao tentar parar FFmpeg: {e}")
-
-            if self.proc.stdout:
-                try:
-                    self.proc.stdout.close()
-                except Exception as e:
-                    logger.debug(f"[FFMPEG] Erro ao fechar stdout: {e}")
-            if self.proc.stderr:
-                try:
-                    self.proc.stderr.close()
-                except Exception as e:
-                    logger.debug(f"[FFMPEG] Erro ao fechar stderr: {e}")
-
-            self.proc = None
-
-        if self.is_alive():
-            self.join(timeout=5)
+        self.proc.terminate()
+        self.join()
 
 
 class CameraThread(threading.Thread):
@@ -213,6 +189,7 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def run(self):
+        logger.info(f"[{self.camera_name} - {self.recorder_name}] Iniciando monitoramento.")
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
             self.trigger_error_event("Failed to get RTSP resolution")
@@ -244,6 +221,7 @@ class CameraThread(threading.Thread):
             return
 
         freshest = FreshestFFmpegFrame(proc, width, height)
+        logger.info(f"[{self.camera_name} - {self.recorder_name}] Thread de leitura de frame iniciada.")
 
         def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name, dguard_camera_id, recorder_guid):
             pps_error_detected = False
@@ -308,30 +286,22 @@ class CameraThread(threading.Thread):
             last_sent = 0
             person_detected = False
             last_total_detections = 0
-
-            # no_frame_start = time.time()
-            # start_time = None
             thread_start_time = time.time()
 
+            logger.debug(f"[{self.camera_name} - {self.recorder_name}] Entrando no loop de monitoramento.")
+
             while self.running and (time.time() - thread_start_time < 20):
+                elapsed = time.time() - thread_start_time
                 frame = freshest.read()
 
                 if frame is None:
+                    logger.debug(f"[{self.camera_name} - {self.recorder_name}] Nenhum frame recebido ainda. Tempo decorrido: {elapsed:.2f}s")
+                    time.sleep(0.2)
                     continue
-                # if frame is None:
-                #     if time.time() - no_frame_start > 10:
-                #         self.trigger_error_event("Sem frames válidos por 10s")
-                #         break
-                #     continue
-                # else:
-                #     if start_time is None:
-                #         start_time = time.time()
-                #     no_frame_start = time.time()
-
-                # if time.time() - start_time > 5:
-                #     break
 
                 frame_count += 1
+                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Frame #{frame_count} recebido. Tempo decorrido: {elapsed:.2f}s")
+
                 resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
 
                 if frame_count % PROCESS_EVERY != 0:
@@ -341,8 +311,9 @@ class CameraThread(threading.Thread):
                             break
                     continue
 
-                result = model(resized, classes=[0], verbose=False)
+                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Processando frame #{frame_count}")
 
+                result = model(resized, classes=[0], verbose=False)
                 person_detected = False
                 total_detections = 0
 
@@ -370,6 +341,8 @@ class CameraThread(threading.Thread):
                         person_detected = True
                         total_detections += 1
 
+                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Deteções: {total_detections}, Anterior: {last_total_detections}")
+
                 if total_detections != last_total_detections:
                     last_total_detections = total_detections
 
@@ -385,9 +358,9 @@ class CameraThread(threading.Thread):
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 
+            elapsed = time.time() - thread_start_time
             status = "DETECÇÃO REALIZADA" if person_detected else "NENHUMA DETECÇÃO"
             logger.info(f"{status} para {self.camera_name} ({self.recorder_name})")
-
 
         except Exception as e:
             logger.exception(f"Erro inesperado em {self.camera_name} ({self.recorder_name}): {e}")
@@ -395,7 +368,10 @@ class CameraThread(threading.Thread):
 
         finally:
             freshest.stop()
-            logger.info(f"[TERMINATED] Thread finalizada para {self.camera_name} ({self.recorder_name})")
+            if SHOW_VIDEO:
+                cv2.destroyWindow(f"{self.camera_name}")
+            logger.info(f"[{self.camera_name} - {self.recorder_name}] Thread finalizada.")
+
 
 def get_selected_cameras_with_fallback(camera_recorder_list):
     conn = sqlite3.connect("database.db")
