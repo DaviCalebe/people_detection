@@ -351,6 +351,7 @@ class CameraThread(threading.Thread):
                     if current_time - last_sent >= event_delay:
                         logger.warning(f"Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
                         last_sent = current_time
+                        set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     break
 
                 if SHOW_VIDEO:
