@@ -32,4 +32,4 @@
 ## Exemplo de requisição POST para API
 
    ```bash
-   curl -X POST "http://localhost:8000/set-cameras" -H "Content-Type: application/json" -d "{\"camera_id\":13,\"recorder_guid\":\"{B54AE1B4-CCB8-4D80-9E85-4A7593FF789C}\"}"
+   curl -X POST "http://localhost:8000/set-cameras" -H "Content-Type: application/json" -d "{\"camera_id\":3,\"recorder_guid\":\"{168C2FDD-46CD-444C-83BB-02A7603990E1}\"}"
