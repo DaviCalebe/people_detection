@@ -16653,7 +16653,7 @@
                     }
                 },
                 "RS_PELOTAS": {
-                    "guid": "{F52B3406-6705-4DB5-8D88-FAE48B05F09B}",
+                    "guid": "{168C2FDD-46CD-444C-83BB-02A7603990E1}",
                     "cameras": {
                         "administrativo_canal_1": {
                             "id": 0,
@@ -17377,7 +17377,7 @@
                     }
                 },
                 "BA_LAURO_DE_FREITAS_DVR_1": {
-                    "guid": "{C218173E-9659-4A34-A7F8-2A278E5490EB}",
+                    "guid": "{978935A2-1E61-44FF-B5D0-365A3E98367B}",
                     "cameras": {
                         "entrada_principal_canal_1": {
                             "id": 0,
@@ -18509,7 +18509,7 @@
                     }
                 },
                 "PA_ANANINDEUA_DVR_1": {
-                    "guid": "{75CAB69A-0B2B-44EF-9A90-D71BEEFA54BB}",
+                    "guid": "{86D6CF12-1B3B-4A8F-870D-58E161B68EAE}",
                     "cameras": {
                         "corredor_externo_canal_1": {
                             "id": 0,
@@ -18892,7 +18892,7 @@
                     }
                 },
                 "MT_LUCAS_DO_RIO_VERDE_DVR": {
-                    "guid": "{D74025F9-CCBB-4E51-9BFB-5DFE348E1F97}",
+                    "guid": "{D023C914-89AA-4E40-BD4C-544C3549FE21}",
                     "cameras": {
                         "entrada_principal_canal_1": {
                             "id": 0,
@@ -20644,7 +20644,7 @@
                     }
                 },
                 "MT_VARZEA_GRANDE": {
-                    "guid": "{FF059874-D646-4EE1-8CF8-5037AC518F47}",
+                    "guid": "{DD3F09B7-7556-45A6-8010-259C8EAA8DFE}",
                     "cameras": {
                         "entrada_principal_canal_1": {
                             "id": 0,
@@ -26399,7 +26399,7 @@
                     }
                 },
                 "PI_TERESINA": {
-                    "guid": "{3420088C-0991-4183-848E-418963C57185}",
+                    "guid": "{51C7113F-A84F-4AAF-A3EB-3B2820798B96}",
                     "cameras": {
                         "estacionamento_canal_1": {
                             "id": 0,
@@ -27081,7 +27081,7 @@
                     }
                 },
                 "PE_PETROLINA": {
-                    "guid": "{267D0711-420D-458E-9B2B-B97D72D501A5}",
+                    "guid": "{89510BCC-8D1C-4725-9915-798E0436D199}",
                     "cameras": {
                         "norte_da_unidade_canal_1": {
                             "id": 0,
