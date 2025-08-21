@@ -1,6 +1,6 @@
 import time
-from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder_virtual
 import logging
+from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder
 
 # --- Configurar logger básico para o main
 logging.basicConfig(
@@ -9,27 +9,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Tempo que cada gravador terá suas câmeras abertas
+# Tempo que cada gravador terá sua câmera aberta
 RUN_TIME_PER_RECORDER = 10  # segundos
 
 def ronda_virtual():
     """
     Executa a ronda virtual percorrendo todos os gravadores.
-    Para cada gravador, abre todas as suas câmeras por RUN_TIME_PER_RECORDER segundos.
+    Para cada gravador, abre apenas a primeira câmera por RUN_TIME_PER_RECORDER segundos.
     """
     while True:
         recorders = get_recorders()
         for recorder in recorders:
-            cameras = get_cameras_by_recorder_virtual(recorder["guid"])
+            cameras = get_cameras_by_recorder(recorder["guid"])
             if not cameras:
-                logger.warning(f"Gravador {recorder['name']} não possui câmeras disponíveis.")
+                logger.warning(f"Gravador {recorder['name']} não possui câmeras.")
                 continue
 
-            logger.info(f"Iniciando gravador {recorder['name']} com {len(cameras)} câmeras.")
-
-            threads = []
-
-            # Inicia todas as câmeras do gravador
+                        # Inicia todas as câmeras do gravador
             for cam in cameras:
                 full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
 
@@ -44,15 +40,25 @@ def ronda_virtual():
                 t.start()
                 threads.append(t)
 
-            # Mantém todas as câmeras rodando por RUN_TIME_PER_RECORDER segundos
+"""             cam = cameras[0]  # pega apenas a primeira câmera
+            full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
 
-            # Para todas as câmeras do gravador
-            for t in threads:
-                t.stop()
-                t.join()
+            logger.info(f"Iniciando gravador {recorder['name']} com a câmera {cam['name']}.")
+
+            t = CameraThread(
+                rtsp_url=full_rtsp,
+                camera_name=cam["name"],
+                camera_id=cam["id"],
+                dguard_camera_id=cam["camera_id"],
+                recorder_guid=recorder["guid"],
+                recorder_name=recorder["name"]
+            )
+            t.start() """
+            time.sleep(RUN_TIME_PER_RECORDER)
+            t.running = False
+            t.join()
 
             logger.info(f"Finalizado gravador {recorder['name']}.\n")
-
 
 if __name__ == "__main__":
     try:

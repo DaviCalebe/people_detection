@@ -40,7 +40,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-SHOW_VIDEO = False
+SHOW_VIDEO = True
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
@@ -220,7 +220,6 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def run(self):
-        logger.info(f"[{self.camera_name} - {self.recorder_name}] Iniciando monitoramento.")
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
             self.trigger_error_event("Failed to get RTSP resolution")
@@ -252,7 +251,6 @@ class CameraThread(threading.Thread):
             return
 
         freshest = FreshestFFmpegFrame(proc, width, height)
-        logger.info(f"[{self.camera_name} - {self.recorder_name}] Thread de leitura de frame iniciada.")
 
         def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name, dguard_camera_id, recorder_guid):
             pps_error_detected = False
@@ -402,7 +400,6 @@ class CameraThread(threading.Thread):
             freshest.stop()
             if SHOW_VIDEO:
                 cv2.destroyWindow(f"{self.camera_name}")
-            logger.info(f"[{self.camera_name} - {self.recorder_name}] Thread finalizada.")
 
 
 def get_cameras_by_recorder_virtual(recorder_guid):
