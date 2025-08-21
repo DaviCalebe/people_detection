@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -135,6 +135,37 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
         return None
 
 
+
+def get_recorders():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, guid, name FROM recorders")
+    recorders = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "guid": r[1], "name": r[2]} for r in recorders]
+
+def get_cameras_by_recorder(recorder_guid):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT c.id, c.camera_id, c.name, s.url, s.username, s.password
+        FROM cameras c
+        JOIN streams s ON s.camera_id = c.id
+        JOIN recorders r ON c.recorder_id = r.id
+        WHERE r.guid = ?
+    """, (recorder_guid,))
+    cameras = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "id": c[0],
+            "camera_id": c[1],
+            "name": c[2],
+            "url": c[3],
+            "username": c[4],
+            "password": c[5]
+        } for c in cameras
+    ]
 
 class FreshestFFmpegFrame(threading.Thread):
     def __init__(self, ffmpeg_proc, width, height):
@@ -374,21 +405,16 @@ class CameraThread(threading.Thread):
             logger.info(f"[{self.camera_name} - {self.recorder_name}] Thread finalizada.")
 
 
-def get_selected_cameras_with_fallback(camera_recorder_list):
+def get_cameras_by_recorder_virtual(recorder_guid):
+    """
+    Retorna todas as câmeras de um gravador específico, priorizando
+    stream extra (stream_id=1) antes da principal (stream_id=0),
+    prontas para iniciar um CameraThread.
+    """
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
-    if not camera_recorder_list:
-        return []
-
-    or_clauses = []
-    params = []
-    for cam_id, rec_guid in camera_recorder_list:
-        or_clauses.append("(c.camera_id = ? AND r.guid = ?)")
-        params.extend([cam_id, rec_guid])
-
-    # Buscar streams de ambas as IDs (0 e 1), e ordenar para termos sempre principal e extra
-    query = f"""
+    query = """
         SELECT
             c.id,
             c.camera_id AS dguard_camera_id,
@@ -396,20 +422,35 @@ def get_selected_cameras_with_fallback(camera_recorder_list):
             s.url,
             s.username,
             s.password,
-            r.guid,
+            r.guid AS recorder_guid,
             r.name AS recorder_name,
             s.stream_id
         FROM cameras c
         JOIN streams s ON s.camera_id = c.id AND s.stream_id IN (0,1)
         JOIN recorders r ON c.recorder_id = r.id
-        WHERE {" OR ".join(or_clauses)} AND s.url != 'indisponível'
-        ORDER BY c.id, s.stream_id DESC  -- Ordena para priorizar stream extra (1) antes da principal (0)
+        WHERE r.guid = ? AND s.url != 'indisponível'
+        ORDER BY c.id, s.stream_id DESC  -- Prioriza stream extra (1) antes da principal (0)
     """
 
-    cursor.execute(query, params)
+    cursor.execute(query, (recorder_guid,))
     results = cursor.fetchall()
     conn.close()
-    return results
+
+    # Retorna lista de dicionários prontos para o CameraThread
+    cameras = [
+        {
+            "id": r[0],
+            "dguard_camera_id": r[1],
+            "name": r[2],
+            "url": r[3],
+            "username": r[4],
+            "password": r[5],
+            "recorder_guid": r[6],
+            "recorder_name": r[7],
+            "stream_id": r[8]
+        } for r in results
+    ]
+    return cameras
 
 def start_monitoring_cameras_with_fallback(camera_recorder_list):
     cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
