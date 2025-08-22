@@ -167,6 +167,7 @@ def get_cameras_by_recorder(recorder_guid):
         } for c in cameras
     ]
 
+
 class FreshestFFmpegFrame(threading.Thread):
     def __init__(self, ffmpeg_proc, width, height):
         super().__init__()
@@ -185,7 +186,7 @@ class FreshestFFmpegFrame(threading.Thread):
             if not raw_frame:
                 break
             if len(raw_frame) != frame_size:
-                continue  # Pula frames incompletos (geralmente no fim da transmissão)
+                continue  # Pula frames incompletos
 
             frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
             with self.lock:
@@ -197,7 +198,6 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.proc.terminate()
         self.join()
 
 
@@ -212,12 +212,86 @@ class CameraThread(threading.Thread):
         self.recorder_name = recorder_name
         self.running = True
         self.error_event_sent = False
+        self.ffmpeg_proc = None
+        self.freshest = None
+        self.error_thread = None
 
     def trigger_error_event(self, reason):
         if not self.error_event_sent:
             logger.warning(f"[{self.camera_name} - {self.recorder_name}] Acionando evento por erro: {reason}")
             set_event_schedule(self.dguard_camera_id, self.recorder_guid)
             self.error_event_sent = True
+
+    def stop(self):
+        """Para toda a stack da câmera: loop, Freshest, FFmpeg e janela OpenCV."""
+        self.running = False
+
+        if self.freshest:
+            self.freshest.stop()
+
+        if self.ffmpeg_proc and self.ffmpeg_proc.poll() is None:
+            try:
+                self.ffmpeg_proc.terminate()
+                self.ffmpeg_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.ffmpeg_proc.kill()
+
+        if SHOW_VIDEO:
+            try:
+                cv2.destroyWindow(f"{self.camera_name}")
+            except:
+                pass
+
+        logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada com sucesso.")
+
+
+
+    def _log_ffmpeg_errors(self, stderr_pipe):
+        pps_error_detected = False
+        ref_error_detected = False
+        disconnect_error_detected = False
+
+        for line in iter(stderr_pipe.readline, b''):
+            decoded_line = line.decode('utf-8', errors='ignore').strip()
+
+            if "non-existing PPS" in decoded_line:
+                if not pps_error_detected:
+                    logger.error(f"{self.camera_name} ({self.recorder_name}): PPS ausente no stream RTSP.")
+                    pps_error_detected = True
+                continue
+
+            if pps_error_detected and any(x in decoded_line for x in [
+                "decode_slice_header error",
+                "no frame!",
+                "Error submitting packet",
+                "Invalid data found"
+            ]):
+                continue
+
+            if "reference picture missing" in decoded_line or "Missing reference picture" in decoded_line:
+                if not ref_error_detected:
+                    logger.error(f"{self.camera_name} ({self.recorder_name}): Referência de frame ausente.")
+                    ref_error_detected = True
+                continue
+
+            if ref_error_detected and any(x in decoded_line for x in [
+                "decode_slice_header error",
+                "bytestream",
+                "Missing reference picture",
+                "no frame!",
+                "Invalid data found"
+            ]):
+                continue
+
+            if "Error number -10054" in decoded_line:
+                if not disconnect_error_detected:
+                    logger.error(f"{self.camera_name} ({self.recorder_name}): Desconexão remota detectada (-10054).")
+                    disconnect_error_detected = True
+                    set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+                continue
+
+            logger.error(f"{self.camera_name} ({self.recorder_name}) {decoded_line}")
+            set_event_schedule(self.dguard_camera_id, self.recorder_guid)
 
     def run(self):
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
@@ -238,7 +312,7 @@ class CameraThread(threading.Thread):
             "-"
         ]
 
-        proc = subprocess.Popen(
+        self.ffmpeg_proc = subprocess.Popen(
             ffmpeg_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -246,69 +320,18 @@ class CameraThread(threading.Thread):
             text=False
         )
 
-        if proc.stdout is None or proc.stderr is None:
+        if self.ffmpeg_proc.stdout is None or self.ffmpeg_proc.stderr is None:
             self.trigger_error_event("FFmpeg não iniciou corretamente")
             return
 
-        freshest = FreshestFFmpegFrame(proc, width, height)
+        self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height)
 
-        def log_ffmpeg_errors(stderr_pipe, camera_name, recorder_name, dguard_camera_id, recorder_guid):
-            pps_error_detected = False
-            ref_error_detected = False
-            disconnect_error_detected = False
-
-            for line in iter(stderr_pipe.readline, b''):
-                decoded_line = line.decode('utf-8', errors='ignore').strip()
-
-                # Tratamento PPS ausente
-                if "non-existing PPS" in decoded_line:
-                    if not pps_error_detected:
-                        logger.error(f"{camera_name} ({recorder_name}): PPS ausente no stream RTSP. Ignorando mensagens repetidas.")
-                        pps_error_detected = True
-                    continue
-
-                if pps_error_detected and any(x in decoded_line for x in [
-                    "decode_slice_header error",
-                    "no frame!",
-                    "Error submitting packet",
-                    "Invalid data found"
-                ]):
-                    continue
-
-                # Tratamento referência de frame ausente
-                if "reference picture missing" in decoded_line or "Missing reference picture" in decoded_line:
-                    if not ref_error_detected:
-                        logger.error(f"{camera_name} ({recorder_name}): Referência de frame ausente. Ignorando mensagens repetidas.")
-                        ref_error_detected = True
-                    continue
-
-                if ref_error_detected and any(x in decoded_line for x in [
-                    "decode_slice_header error",
-                    "bytestream",
-                    "Missing reference picture",
-                    "no frame!",
-                    "Invalid data found"
-                ]):
-                    continue
-
-                # Tratamento específico para desconexão remota -10054
-                if "Error number -10054" in decoded_line:
-                    if not disconnect_error_detected:
-                        logger.error(f"{camera_name} ({recorder_name}): Desconexão remota detectada (Error number -10054).")
-                        disconnect_error_detected = True
-                        set_event_schedule(dguard_camera_id, recorder_guid)
-                    continue
-
-                # Log geral para outras mensagens de erro e acionamento de evento
-                logger.error(f"{camera_name} ({recorder_name}) {decoded_line}")
-                set_event_schedule(dguard_camera_id, recorder_guid)
-
-        error_thread = threading.Thread(
-            target=log_ffmpeg_errors,
-            args=(proc.stderr, self.camera_name, self.recorder_name, self.dguard_camera_id, self.recorder_guid),
+        self.error_thread = threading.Thread(
+            target=self._log_ffmpeg_errors,
+            args=(self.ffmpeg_proc.stderr,),
             daemon=True
         )
-        error_thread.start()
+        self.error_thread.start()
 
         try:
             frame_count = 0
@@ -320,17 +343,12 @@ class CameraThread(threading.Thread):
             logger.debug(f"[{self.camera_name} - {self.recorder_name}] Entrando no loop de monitoramento.")
 
             while self.running and (time.time() - thread_start_time < 20):
-                elapsed = time.time() - thread_start_time
-                frame = freshest.read()
-
+                frame = self.freshest.read()
                 if frame is None:
-                    logger.debug(f"[{self.camera_name} - {self.recorder_name}] Nenhum frame recebido ainda. Tempo decorrido: {elapsed:.2f}s")
                     time.sleep(0.2)
                     continue
 
                 frame_count += 1
-                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Frame #{frame_count} recebido. Tempo decorrido: {elapsed:.2f}s")
-
                 resized = cv2.resize(frame, (RESIZE_WIDTH, RESIZE_HEIGHT))
 
                 if frame_count % PROCESS_EVERY != 0:
@@ -339,8 +357,6 @@ class CameraThread(threading.Thread):
                         if cv2.waitKey(1) & 0xFF == ord('q'):
                             break
                     continue
-
-                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Processando frame #{frame_count}")
 
                 result = model(resized, classes=[0], verbose=False)
                 person_detected = False
@@ -351,7 +367,6 @@ class CameraThread(threading.Thread):
                         conf = float(data.conf[0])
                         cls_id = int(data.cls[0])
                         label = model.names[cls_id]
-
                         if label != 'person' or conf < CONFIDENCE_THRESHOLD:
                             continue
 
@@ -359,7 +374,6 @@ class CameraThread(threading.Thread):
                         center = ((x1 + x2) // 2, (y1 + y2) // 2)
 
                         zone_config = ZONES.get((self.dguard_camera_id, self.recorder_guid))
-
                         if zone_config and not is_in_zone(center, zone_config):
                             continue
 
@@ -369,11 +383,6 @@ class CameraThread(threading.Thread):
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (251, 226, 0), 2)
                         person_detected = True
                         total_detections += 1
-
-                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Deteções: {total_detections}, Anterior: {last_total_detections}")
-
-                if total_detections != last_total_detections:
-                    last_total_detections = total_detections
 
                 if person_detected:
                     current_time = time.time()
@@ -388,7 +397,6 @@ class CameraThread(threading.Thread):
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 
-            elapsed = time.time() - thread_start_time
             status = "DETECÇÃO REALIZADA" if person_detected else "NENHUMA DETECÇÃO"
             logger.info(f"{status} para {self.camera_name} ({self.recorder_name})")
 
@@ -397,9 +405,7 @@ class CameraThread(threading.Thread):
             self.trigger_error_event("Erro inesperado na thread da câmera")
 
         finally:
-            freshest.stop()
-            if SHOW_VIDEO:
-                cv2.destroyWindow(f"{self.camera_name}")
+            self.stop()
 
 
 def get_cameras_by_recorder_virtual(recorder_guid):
