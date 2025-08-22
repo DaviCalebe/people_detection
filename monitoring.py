@@ -40,7 +40,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-SHOW_VIDEO = True
+SHOW_VIDEO = False
 CONFIDENCE_THRESHOLD = 0.5
 RESIZE_WIDTH = 640
 RESIZE_HEIGHT = 360
@@ -410,8 +410,8 @@ class CameraThread(threading.Thread):
 
 def get_cameras_by_recorder_virtual(recorder_guid):
     """
-    Retorna todas as câmeras de um gravador específico, priorizando
-    stream extra (stream_id=1) antes da principal (stream_id=0),
+    Retorna todas as câmeras de um gravador específico,
+    usando apenas a stream extra (stream_id=1),
     prontas para iniciar um CameraThread.
     """
     conn = sqlite3.connect("database.db")
@@ -420,7 +420,7 @@ def get_cameras_by_recorder_virtual(recorder_guid):
     query = """
         SELECT
             c.id,
-            c.camera_id AS dguard_camera_id,
+            c.camera_id,           -- mantém como camera_id
             c.name,
             s.url,
             s.username,
@@ -429,10 +429,10 @@ def get_cameras_by_recorder_virtual(recorder_guid):
             r.name AS recorder_name,
             s.stream_id
         FROM cameras c
-        JOIN streams s ON s.camera_id = c.id AND s.stream_id IN (0,1)
+        JOIN streams s ON s.camera_id = c.id AND s.stream_id = 1  -- apenas stream extra
         JOIN recorders r ON c.recorder_id = r.id
         WHERE r.guid = ? AND s.url != 'indisponível'
-        ORDER BY c.id, s.stream_id DESC  -- Prioriza stream extra (1) antes da principal (0)
+        ORDER BY c.id
     """
 
     cursor.execute(query, (recorder_guid,))
@@ -443,7 +443,7 @@ def get_cameras_by_recorder_virtual(recorder_guid):
     cameras = [
         {
             "id": r[0],
-            "dguard_camera_id": r[1],
+            "camera_id": r[1],        # chave ajustada para compatibilidade com main.py
             "name": r[2],
             "url": r[3],
             "username": r[4],

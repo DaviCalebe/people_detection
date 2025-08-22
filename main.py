@@ -1,6 +1,6 @@
 import time
 import logging
-from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder
+from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder_virtual
 
 # --- Configurar logger básico para o main
 logging.basicConfig(
@@ -24,7 +24,7 @@ def ronda_virtual(modo="first"):
     while True:
         recorders = get_recorders()
         for recorder in recorders:
-            cameras = get_cameras_by_recorder(recorder["guid"])
+            cameras = get_cameras_by_recorder_virtual(recorder["guid"])
             if not cameras:
                 logger.warning(f"Gravador {recorder['name']} não possui câmeras.")
                 continue
@@ -38,6 +38,7 @@ def ronda_virtual(modo="first"):
                 threads = []
                 for cam in cameras:
                     full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
+                    print(full_rtsp)
 
                     t = CameraThread(
                         rtsp_url=full_rtsp,
@@ -55,7 +56,6 @@ def ronda_virtual(modo="first"):
 
                 # Para all as câmeras
                 for t in threads:
-                    t.stop()
                     t.join()
 
             else:
@@ -64,6 +64,7 @@ def ronda_virtual(modo="first"):
                 # ============================================================
                 cam = cameras[0]  # pega apenas a first câmera
                 full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
+                print(full_rtsp)
 
                 logger.info(f"Iniciando gravador {recorder['name']} com a câmera {cam['name']}.")
 
@@ -79,7 +80,6 @@ def ronda_virtual(modo="first"):
 
                 time.sleep(RUN_TIME_PER_RECORDER)
 
-                t.stop()
                 t.join()
 
             logger.info(f"Finalizado gravador {recorder['name']}.\n")
