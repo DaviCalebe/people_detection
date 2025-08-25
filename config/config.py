@@ -1,7 +1,7 @@
 from helpers.apiHelper import post
-from guids.server2_guids import SERVER2_BASE_URL
+from guids.station_guids import STATION_BASE_URL
 
-login_url = f"{SERVER2_BASE_URL}/login"
+login_url = f"{STATION_BASE_URL}/login"
 
 credentials = {
     "username": "TesteAPI",

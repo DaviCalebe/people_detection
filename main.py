@@ -1,6 +1,6 @@
 import time
 import logging
-from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder_virtual
+from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder
 
 # --- Configurar logger básico para o main
 logging.basicConfig(
@@ -9,86 +9,65 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Tempo que cada gravador terá suas câmeras abertas
-RUN_TIME_PER_RECORDER = 10  # segundos
+# Tempo que cada gravador terá suas câmeras abertas (em segundos)
+RUN_TIME_PER_RECORDER = 10
 
-def ronda_virtual(modo="first"):
+def ronda_virtual(selected_recorders_names=None):
     """
-    Executa a ronda virtual percorrendo todos os gravadores.
-    
-    :param modo: Define como abrir as câmeras de cada gravador.
-                 Valores possíveis:
-                   - "first": abre apenas a first câmera do gravador (default).
-                   - "all": abre all as câmeras do gravador em paralelo.
+    Executa a ronda virtual percorrendo os gravadores selecionados.
+    Se selected_recorders_names for None, percorre todos.
     """
-    while True:
-        recorders = get_recorders()
-        for recorder in recorders:
-            cameras = get_cameras_by_recorder_virtual(recorder["guid"])
-            if not cameras:
-                logger.warning(f"Gravador {recorder['name']} não possui câmeras.")
-                continue
+    recorders = get_recorders()
 
-            logger.info(f"Iniciando gravador {recorder['name']} com {len(cameras)} câmeras.")
+    # Filtrar gravadores apenas pelos nomes selecionados, se houver
+    if selected_recorders_names:
+        recorders = [r for r in recorders if r["name"] in selected_recorders_names]
 
-            if modo == "all":
-                # ============================================================
-                # OPÇÃO 1 - Rodar all as câmeras do gravador
-                # ============================================================
-                threads = []
-                for cam in cameras:
-                    full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
-                    print(full_rtsp)
+    if not recorders:
+        logger.warning("Nenhum gravador encontrado para a ronda.")
+        return
 
-                    t = CameraThread(
-                        rtsp_url=full_rtsp,
-                        camera_name=cam["name"],
-                        camera_id=cam["id"],
-                        dguard_camera_id=cam["camera_id"],
-                        recorder_guid=recorder["guid"],
-                        recorder_name=recorder["name"]
-                    )
-                    t.start()
-                    threads.append(t)
+    for recorder in recorders:
+        cameras = get_cameras_by_recorder(recorder["guid"])
+        if not cameras:
+            logger.warning(f"Não há câmeras no gravador {recorder['name']}")
+            continue
 
-                # Mantém all as câmeras rodando pelo tempo definido
-                time.sleep(RUN_TIME_PER_RECORDER)
+        logger.info(f"Iniciando gravador {recorder['name']} com {len(cameras)} câmeras.")
 
-                # Para all as câmeras
-                for t in threads:
-                    t.join()
+        threads = []
+        for cam in cameras:
+            # montar RTSP completo com credenciais
+            full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
+            t = CameraThread(
+                rtsp_url=full_rtsp,
+                camera_name=cam["name"],
+                camera_id=cam["id"],
+                dguard_camera_id=cam["camera_id"],
+                recorder_guid=recorder["guid"],
+                recorder_name=recorder["name"]
+            )
+            t.start()
+            threads.append(t)
 
-            else:
-                # ============================================================
-                # OPÇÃO 2 - Rodar apenas a first câmera do gravador
-                # ============================================================
-                cam = cameras[0]  # pega apenas a first câmera
-                full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
-                print(full_rtsp)
+        # esperar RUN_TIME_PER_RECORDER segundos antes de parar todas as câmeras do gravador
+        time.sleep(RUN_TIME_PER_RECORDER)
+        for t in threads:
+            t.stop()
+            t.join()
 
-                logger.info(f"Iniciando gravador {recorder['name']} com a câmera {cam['name']}.")
-
-                t = CameraThread(
-                    rtsp_url=full_rtsp,
-                    camera_name=cam["name"],
-                    camera_id=cam["id"],
-                    dguard_camera_id=cam["camera_id"],
-                    recorder_guid=recorder["guid"],
-                    recorder_name=recorder["name"]
-                )
-                t.start()
-
-                time.sleep(RUN_TIME_PER_RECORDER)
-
-                t.join()
-
-            logger.info(f"Finalizado gravador {recorder['name']}.\n")
-
-
+        logger.info(f"Gravador {recorder['name']} finalizado.")
 
 if __name__ == "__main__":
-    try:
-        logger.info("Iniciando ronda virtual...")
-        ronda_virtual()
-    except KeyboardInterrupt:
-        logger.info("Ronda virtual interrompida manualmente.")
+    # Lista com os nomes dos gravadores que você quer testar
+    test_recorders = [
+        "PE_MATRIZ_DVR_1",
+        "PE_MATRIZ_DVR_2",
+        "MATRIZ_NVR_4",
+        "MATRIZ_NVR_5",
+        "MATRIZ_NVR_6"
+        "PE_BOA_VIAGEM_CENTER_8_ANDAR",
+        "PE_BOA_VIAGEM_CENTER_11_ANDAR"
+    ]
+
+    ronda_virtual(selected_recorders_names=test_recorders)
