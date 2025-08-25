@@ -3,9 +3,11 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+DEFAULT_TIMEOUT = 7  # segundos
 
 def get(url, **kwargs):
     kwargs.setdefault("verify", False)
+    kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
     try:
         response = requests.get(url, **kwargs)
         response.raise_for_status()
@@ -17,6 +19,7 @@ def get(url, **kwargs):
 
 def post(url, **kwargs):
     kwargs.setdefault("verify", False)
+    kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
     try:
         response = requests.post(url, **kwargs)
         response.raise_for_status()
@@ -28,6 +31,7 @@ def post(url, **kwargs):
 
 def put(url, **kwargs):
     kwargs.setdefault("verify", False)
+    kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
     try:
         response = requests.put(url, **kwargs)
         response.raise_for_status()
@@ -39,6 +43,7 @@ def put(url, **kwargs):
 
 def delete(url, **kwargs):
     kwargs.setdefault("verify", False)
+    kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
     try:
         response = requests.delete(url, **kwargs)
         response.raise_for_status()

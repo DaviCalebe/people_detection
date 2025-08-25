@@ -1,0 +1,1610 @@
+[
+    {
+        "name": "PE - MATRIZ DVR 1",
+        "guid": "{2C54AD32-1087-4FE6-B29E-553DB9E60319}",
+        "cameras": [
+            {
+                "name": "Acesso ao 1 andar canal 1 ",
+                "id": 0,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Monitoramento CFTV canal 2",
+                "id": 1,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Auditorio canal 3",
+                "id": 2,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Sala de reuniao diretoria canal 4",
+                "id": 3,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Corredor 1 andar canal 5",
+                "id": 4,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "TI Infraestrutura canal 6",
+                "id": 5,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Supply canal 7",
+                "id": 6,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Supply canal 8",
+                "id": 7,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Tesouraria canal 9",
+                "id": 8,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Supply canal 10",
+                "id": 9,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Supply canal 11",
+                "id": 10,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Supply canal 12",
+                "id": 11,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal 13 disponivel",
+                "id": 12,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal 14 disponivel",
+                "id": 13,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal 15 disponivel",
+                "id": 14,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal 16 disponivel",
+                "id": 15,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SAIDA OESTE DO GALPAO 2 CANAL 1",
+                "id": 16,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "RUA PRINCIPAL CANAL 8",
+                "id": 17,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SUL DO GALPAO CANAL 8",
+                "id": 18,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "ESTACIONAMENTO NORTE CANAL 3",
+                "id": 19,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "PE - MATRIZ DVR 2",
+        "guid": "{ACE1E34A-6155-4A34-BC76-BB4FD14F1A89}",
+        "cameras": [
+            {
+                "name": "Comercial CANAL 1",
+                "id": 0,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Comercial CANAL 2",
+                "id": 1,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Comercial CANAL 3",
+                "id": 2,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Corredor terreo CANAL 4",
+                "id": 3,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Administrativo CANAL 5",
+                "id": 4,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "MARKTING 1 CANAL 6",
+                "id": 5,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "MARKTING 2 CANAL 7",
+                "id": 6,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CORREDOR TERREO CANAL 8",
+                "id": 7,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "ANTIGA AUDITORIA CANAL 9",
+                "id": 8,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "ACESSO AO 1 ANDAR CANAL 10",
+                "id": 9,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 11 DISPONIVEL",
+                "id": 10,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 12 DISPONIVEL",
+                "id": 11,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 13 DISPONIVEL",
+                "id": 12,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 14 DISPONIVEL",
+                "id": 13,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 15 DISPONIVEL",
+                "id": 14,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CANAL 16 DISPONIVEL",
+                "id": 15,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SUL DO GALPAO",
+                "id": 16,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "AREA INTERNA",
+                "id": 17,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Câmera 19",
+                "id": 18,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Câmera 20",
+                "id": 19,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "Indisponível",
+                            "username": "Indisponível",
+                            "password": "Indisponível"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "PE - BOA VIAGEM CENTER 1 - 8 ANDAR",
+        "guid": "{4FCAF92F-7CBF-4FC5-B210-DD9FDE7E8937}",
+        "cameras": [
+            {
+                "name": "Canal1",
+                "id": 0,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=1&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=1&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal2",
+                "id": 1,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=2&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=2&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal3",
+                "id": 2,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=3&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=3&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal4",
+                "id": 3,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=4&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=4&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal5",
+                "id": 4,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=5&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=5&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal6",
+                "id": 5,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=6&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=6&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal7",
+                "id": 6,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=7&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=7&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal8",
+                "id": 7,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=8&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=8&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal9",
+                "id": 8,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=9&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=9&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal10",
+                "id": 9,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=10&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=10&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal11",
+                "id": 10,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=11&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=11&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal12",
+                "id": 11,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=12&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=12&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal13",
+                "id": 12,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=13&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=13&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal14",
+                "id": 13,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=14&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=14&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal15",
+                "id": 14,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=15&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=15&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal16",
+                "id": 15,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=16&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.182.93:80/cam/realmonitor?channel=16&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "PE - BOA VIAGEM CENTER 1 - 11 ANDAR",
+        "guid": "{7E41FD0F-C96D-4B92-A7FB-67AFF526D68F}",
+        "cameras": [
+            {
+                "name": "FINANCEIRO CANAL 1",
+                "id": 0,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=1&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=1&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SALA DE BRUNO MOUTINHO CANAL 2",
+                "id": 1,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=2&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=2&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "AUDITORIA CANAL 3",
+                "id": 2,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=3&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=3&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "TI - SISTEMAS CANAL 4",
+                "id": 3,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=4&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=4&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "FINANCEIRO CANAL 5",
+                "id": 4,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=5&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=5&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "FINANCEIRO CANAL 6",
+                "id": 5,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=6&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=6&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CONTABILIDADE CANAL 7",
+                "id": 6,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=7&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=7&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CONTABILIDADE CANAL 8",
+                "id": 7,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=8&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=8&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "REFEITORIO CANAL 9",
+                "id": 8,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=9&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=9&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "CONTABILIDADE CANAL 10",
+                "id": 9,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=10&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=10&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "RECEPCAO CANAL 11",
+                "id": 10,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=11&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=11&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "TESOURARIA CANAL 12",
+                "id": 11,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=12&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=12&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SALA DO CPD CANAL 13",
+                "id": 12,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=13&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=13&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal14",
+                "id": 13,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=14&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=14&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal15",
+                "id": 14,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=15&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=15&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Canal16",
+                "id": 15,
+                "streams": [
+                    {
+                        "streamId": 0,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=16&subtype=0",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    },
+                    {
+                        "streamId": 1,
+                        "remoteUrl": {
+                            "url": "rtsp://192.168.166.59:80/cam/realmonitor?channel=16&subtype=1",
+                            "username": "dguard",
+                            "password": "monitoramento@CFTV2024"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]
