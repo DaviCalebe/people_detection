@@ -384,6 +384,18 @@ def get_recorders():
     return [{"id": r[0], "guid": r[1], "name": r[2]} for r in recorders]
 
 
+def get_recorders_server1():
+    """
+    Retorna todos os gravadores que pertencem ao Server 1.
+    """
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, guid, name FROM recorders WHERE server_id = 1")
+    recorders = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "guid": r[1], "name": r[2]} for r in recorders]
+
+
 def get_cameras_by_recorder_virtual(recorder_guid):
     """
     Retorna todas as câmeras de um gravador específico,

@@ -94,6 +94,16 @@ if __name__ == "__main__":
 
     try:
         logger.info("Iniciando ronda virtual...")
-        ronda_virtual(selected_recorders_names=test_recorders, modo="first")
+
+        # Pegar todos os gravadores do Server 1
+        import sqlite3
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM recorders WHERE server_id = 1")
+        server1_recorders = [r[0] for r in cursor.fetchall()]
+        conn.close()
+
+        ronda_virtual(selected_recorders_names=server1_recorders, modo="first")
+
     except KeyboardInterrupt:
         logger.info("Ronda virtual interrompida manualmente.")
