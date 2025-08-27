@@ -135,39 +135,6 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
         return None
 
 
-
-def get_recorders():
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, guid, name FROM recorders")
-    recorders = cursor.fetchall()
-    conn.close()
-    return [{"id": r[0], "guid": r[1], "name": r[2]} for r in recorders]
-
-def get_cameras_by_recorder(recorder_guid):
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT c.id, c.camera_id, c.name, s.url, s.username, s.password
-        FROM cameras c
-        JOIN streams s ON s.camera_id = c.id
-        JOIN recorders r ON c.recorder_id = r.id
-        WHERE r.guid = ?
-    """, (recorder_guid,))
-    cameras = cursor.fetchall()
-    conn.close()
-    return [
-        {
-            "id": c[0],
-            "camera_id": c[1],
-            "name": c[2],
-            "url": c[3],
-            "username": c[4],
-            "password": c[5]
-        } for c in cameras
-    ]
-
-
 class FreshestFFmpegFrame(threading.Thread):
     def __init__(self, ffmpeg_proc, width, height):
         super().__init__()
@@ -408,6 +375,15 @@ class CameraThread(threading.Thread):
             self.stop()
 
 
+def get_recorders():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, guid, name FROM recorders")
+    recorders = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "guid": r[1], "name": r[2]} for r in recorders]
+
+
 def get_cameras_by_recorder_virtual(recorder_guid):
     """
     Retorna todas as câmeras de um gravador específico,
@@ -454,58 +430,3 @@ def get_cameras_by_recorder_virtual(recorder_guid):
         } for r in results
     ]
     return cameras
-
-def start_monitoring_cameras_with_fallback(camera_recorder_list):
-    cameras_raw = get_selected_cameras_with_fallback(camera_recorder_list)
-
-    # Agrupar por câmera
-    cameras_dict = {}
-    for (camera_id, dguard_camera_id, camera_name, rtsp_url, username, password, recorder_guid, recorder_name, stream_id) in cameras_raw:
-        key = (camera_id, recorder_guid)
-        if key not in cameras_dict:
-            cameras_dict[key] = {
-                "camera_id": camera_id,
-                "dguard_camera_id": dguard_camera_id,
-                "camera_name": camera_name,
-                "recorder_guid": recorder_guid,
-                "recorder_name": recorder_name,
-                "streams": {}
-            }
-        cameras_dict[key]["streams"][stream_id] = (rtsp_url, username, password)
-
-    # Criar instâncias de CameraThread
-    camera_threads = []
-
-    for cam_data in cameras_dict.values():
-        streams = cam_data["streams"]
-        if 1 in streams:
-            rtsp_url, username, password = streams[1]
-            logger.info(f"Usando STREAM EXTRA para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-        elif 0 in streams:
-            rtsp_url, username, password = streams[0]
-            logger.info(f"Usando STREAM PRINCIPAL para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-        else:
-            logger.warning(f"Nenhuma stream disponível para {cam_data['camera_name']} ({cam_data['recorder_name']})")
-            continue
-
-        full_rtsp_url = insert_rtsp_credentials(rtsp_url, username, password)
-
-        cam_thread = CameraThread(full_rtsp_url,
-                                  cam_data["camera_name"],
-                                  cam_data["camera_id"],
-                                  cam_data["dguard_camera_id"],
-                                  cam_data["recorder_guid"],
-                                  cam_data["recorder_name"])
-
-        camera_threads.append(cam_thread)
-
-    with ThreadPoolExecutor(max_workers=MAX_ACTIVE_CAMERAS) as executor:
-        total_cameras = len(camera_threads)
-        active_limit = min(MAX_ACTIVE_CAMERAS, total_cameras)
-        queue_size = total_cameras - active_limit
-
-        for cam_thread in camera_threads:
-            logger.info(f"Iniciando thread para câmera: {cam_thread.camera_name} ({cam_thread.recorder_name})")
-            executor.submit(cam_thread.start)
-
-    return camera_threads
