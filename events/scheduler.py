@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import time
 import requests
 from config.config import HEADERS
-from guids.station_guids import STATION_PEOPLE_DETECTION_EVENT, STATION_BASE_URL, STATION_SOURCE, STATION_SOURCE_FULLTIME
+from guids.station_guids import STATION_PEOPLE_DETECTION_EVENT, STATION_BASE_URL, STATION_SOURCE_FULLTIME
 import threading
 
 
