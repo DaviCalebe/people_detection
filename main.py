@@ -83,13 +83,18 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
 if __name__ == "__main__":
     # Lista com os nomes dos gravadores que você quer testar
     test_recorders = [
-        "PE_MATRIZ_DVR_1",
-        "PE_MATRIZ_DVR_2",
-        "MATRIZ_NVR_4",
-        "MATRIZ_NVR_5",
-        "MATRIZ_NVR_6",
-        "PE_BOA_VIAGEM_CENTER_8_ANDAR",
-        "PE_BOA_VIAGEM_CENTER_11_ANDAR"
+        "AC_RIO_BRANCO",
+        "AL_MACEIO_DVR_1",
+        "AL_MACEIO_DVR_2",
+        "BA_FEIRA_DE_SANTANA",
+        "BA_LAURO_DE_FREITAS_DVR_1",
+        "BA_LAURO_DE_FRETIAS_DVR_2",
+        "BA_LUIS_EDUARDO_MAGALHAES",
+        "BA_VITORIA_DA_CONQUISTA",
+        "CE_CRATO",
+        "CE_FORTALEZA_NVR_1",
+        "CE_FORTALEZA_NVR_2",
+        "MA_IMPERATRIZ",
     ]
 
     try:
@@ -103,7 +108,7 @@ if __name__ == "__main__":
         server1_recorders = [r[0] for r in cursor.fetchall()]
         conn.close()
 
-        ronda_virtual(selected_recorders_names=server1_recorders, modo="first")
+        ronda_virtual(selected_recorders_names=test_recorders, modo="all")
 
     except KeyboardInterrupt:
         logger.info("Ronda virtual interrompida manualmente.")
