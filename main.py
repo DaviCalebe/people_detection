@@ -94,8 +94,32 @@ if __name__ == "__main__":
         "CE_CRATO",
         "CE_FORTALEZA_NVR_1",
         "CE_FORTALEZA_NVR_2",
+        "MA_BALSAS",
         "MA_IMPERATRIZ",
+        "PA_ANANINDEUA_DVR_1",
+        "PA_MARABA",
+        "PA_REDENCAO",
+        "PB_CAMPINA_GRANDE",
+        "PE_CEASA",
+        "PE_PETROLINA",
+        "PI_BOM_JESUS",
+        "PI_PICOS",
+        "PI_TERESINA",
+        "RN_PARNAMIRIM_DVR_1",
+        "RN_PARNAMIRIM_DVR_2",
+        "RO_ARIQUEMES_DVR1",
+        "RO_ARIQUEMES_DVR2",
+        "RO_CACOAL",
+        "RO_GUAJARÁ_MIRIM_GALPAO",
+        "RO_GUAJARÁ_MIRIM_LOJA",
+        "RO_PORTO_VELHO_NORTE_CENTER",
+        "RO_PORTO_VELHO_NORTE_TIRES",
+        "RO_VILHENA_DVR2",
+        "SE_ARACAJU",
+        "TO_GURUPI",
+        "TO_PALMAS"
     ]
+
 
     try:
         logger.info("Iniciando ronda virtual...")
