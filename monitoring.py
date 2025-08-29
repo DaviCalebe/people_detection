@@ -6,8 +6,8 @@ import cv2
 import json
 import os
 import logging
+import torch
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 from ast import literal_eval
@@ -48,7 +48,9 @@ PROCESS_EVERY = 5
 event_delay = 30
 MAX_ACTIVE_CAMERAS = 10
 
-model = YOLO('models/yolov8n.pt')
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Usando dispositivo: {device}")
+model = YOLO('models/yolov8n.pt', device=device)
 
 # --- Carregar ZONES do arquivo JSON com keys convertidas para tupla
 with open('zones.json', 'r') as f:
