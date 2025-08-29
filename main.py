@@ -83,8 +83,41 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
 if __name__ == "__main__":
     # Lista com os nomes dos gravadores que você quer testar
     test_recorders = [
+        "AC_RIO_BRANCO",
+        "AL_MACEIO_DVR_1",
+        "AL_MACEIO_DVR_2",
+        "BA_FEIRA_DE_SANTANA",
+        "BA_LAURO_DE_FREITAS_DVR_1",
+        "BA_LAURO_DE_FRETIAS_DVR_2",
         "BA_LUIS_EDUARDO_MAGALHAES",
-
+        "BA_VITORIA_DA_CONQUISTA",
+        "CE_CRATO",
+        "CE_FORTALEZA_NVR_1",
+        "CE_FORTALEZA_NVR_2",
+        "MA_BALSAS",
+        "MA_IMPERATRIZ",
+        "PA_ANANINDEUA_DVR_1",
+        "PA_MARABA",
+        "PA_REDENCAO",
+        "PB_CAMPINA_GRANDE",
+        "PE_CEASA",
+        "PE_PETROLINA",
+        "PI_BOM_JESUS",
+        "PI_PICOS",
+        "PI_TERESINA",
+        "RN_PARNAMIRIM_DVR_1",
+        "RN_PARNAMIRIM_DVR_2",
+        "RO_ARIQUEMES_DVR1",
+        "RO_ARIQUEMES_DVR2",
+        "RO_CACOAL",
+        "RO_GUAJARÁ_MIRIM_GALPAO",
+        "RO_GUAJARÁ_MIRIM_LOJA",
+        "RO_PORTO_VELHO_NORTE_CENTER",
+        "RO_PORTO_VELHO_NORTE_TIRES",
+        "RO_VILHENA_DVR2",
+        "SE_ARACAJU",
+        "TO_GURUPI",
+        "TO_PALMAS"
     ]
 
 
