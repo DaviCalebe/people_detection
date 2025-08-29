@@ -108,37 +108,61 @@ def insert_rtsp_credentials(url_base, username, password):
 
 
 def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
-    cmd = [
-        "ffprobe", "-v", "error", "-select_streams", "v:0",
-        "-show_entries", "stream=width,height",
-        "-of", "json", rtsp_url
-    ]
-    try:
-        logger.debug(f"[{camera_name} - {recorder_name}] Executando ffprobe para {rtsp_url}")
-        start_time = time.time()
+    """
+    Tenta obter a resolução da stream extra (subtype=1). 
+    Se demorar >10s ou der erro, troca para subtype=0 (stream principal) e tenta novamente.
+    Logs detalhados indicam cada tentativa.
+    """
+    urls_to_try = [rtsp_url, rtsp_url.replace("subtype=1", "subtype=0")]
 
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        end_time = time.time()
-        logger.debug(f"[{camera_name} - {recorder_name}] ffprobe concluído em {end_time - start_time:.2f}s")
-    except OSError as e:
-        logger.error(f"[{camera_name} - {recorder_name}] Erro ao executar ffprobe (OSError): {e}")
-        return None
-    except Exception as e:
-        logger.error(f"[{camera_name} - {recorder_name}] Erro inesperado ao executar ffprobe: {e}")
-        return None
+    for idx, url in enumerate(urls_to_try):
+        stream_type = "extra" if idx == 0 else "principal"
 
+        if idx == 1:
+            logger.info(f"[{camera_name} - {recorder_name}] Tentando fallback para stream principal...")
 
-    if result.returncode != 0:
-        logger.error(f"Erro ao executar ffprobe: {result.stderr.strip()}")
-        return None
+        try:
+            logger.debug(f"[{camera_name} - {recorder_name}] Tentando ffprobe na stream {stream_type}: {url}")
+            start_time = time.time()
 
-    try:
-        info = json.loads(result.stdout)
-        return info["streams"][0]["width"], info["streams"][0]["height"]
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        logger.error(f"Não foi possível extrair resolução: {e}")
-        return None
+            result = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v", "error",
+                    "-rtsp_transport", "tcp",
+                    "-timeout", "10000000",
+                    "-select_streams", "v:0",
+                    "-show_entries", "stream=width,height",
+                    "-of", "json",
+                    url
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10
+            )
+
+            end_time = time.time()
+            logger.debug(f"[{camera_name} - {recorder_name}] ffprobe {stream_type} concluído em {end_time - start_time:.2f}s")
+
+            if result.returncode != 0:
+                logger.warning(f"[{camera_name} - {recorder_name}] Erro ffprobe na stream {stream_type}: {result.stderr.strip()}")
+                continue
+
+            info = json.loads(result.stdout)
+            width = info["streams"][0]["width"]
+            height = info["streams"][0]["height"]
+            logger.info(f"[{camera_name} - {recorder_name}] Resolução obtida ({stream_type}): {width}x{height}")
+            return width, height
+
+        except subprocess.TimeoutExpired:
+            logger.warning(f"[{camera_name} - {recorder_name}] ffprobe timeout de 10s na stream {stream_type}")
+        except Exception as e:
+            logger.error(f"[{camera_name} - {recorder_name}] Erro inesperado ffprobe na stream {stream_type}: {e}")
+
+    logger.error(f"[{camera_name} - {recorder_name}] Não foi possível obter resolução de nenhuma stream")
+    return None
+
 
 
 class FreshestFFmpegFrame(threading.Thread):
@@ -329,11 +353,7 @@ class CameraThread(threading.Thread):
             logger.debug(f"[{self.camera_name} - {self.recorder_name}] Entrando no loop de monitoramento.")
 
             while self.running and (time.time() - thread_start_time < 20):
-                frame_start = time.time()
                 frame = self.freshest.read()
-                frame_end = time.time()
-                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Frame lido em {frame_end - frame_start:.3f}s")
-
                 if frame is None:
                     time.sleep(0.2)
                     continue
@@ -349,9 +369,7 @@ class CameraThread(threading.Thread):
                     continue
 
                 # --- Processamento do modelo ---
-                model_start = time.time()
                 result = model(resized, classes=[0], verbose=False)
-                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Modelo processou frame em {time.time() - model_start:.3f}s")
                 person_detected = False
                 total_detections = 0
 
