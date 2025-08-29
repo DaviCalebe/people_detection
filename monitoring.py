@@ -23,7 +23,7 @@ log_filename = os.path.join(log_dir, f"logs_{datetime.now().strftime('%d-%m-%Y')
 
 # Criar o logger
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Criar formatador com timestamp
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
@@ -114,7 +114,13 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
         "-of", "json", rtsp_url
     ]
     try:
+        logger.debug(f"[{camera_name} - {recorder_name}] Executando ffprobe para {rtsp_url}")
+        start_time = time.time()
+
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        end_time = time.time()
+        logger.debug(f"[{camera_name} - {recorder_name}] ffprobe concluído em {end_time - start_time:.2f}s")
     except OSError as e:
         logger.error(f"[{camera_name} - {recorder_name}] Erro ao executar ffprobe (OSError): {e}")
         return None
@@ -190,7 +196,6 @@ class CameraThread(threading.Thread):
             self.error_event_sent = True
 
     def stop(self):
-        """Para toda a stack da câmera: loop, Freshest, FFmpeg e janela OpenCV."""
         self.running = False
 
         if self.freshest:
@@ -210,8 +215,6 @@ class CameraThread(threading.Thread):
                 pass
 
         logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada com sucesso.")
-
-
 
     def _log_ffmpeg_errors(self, stderr_pipe):
         pps_error_detected = False
@@ -261,6 +264,9 @@ class CameraThread(threading.Thread):
             set_event_schedule(self.dguard_camera_id, self.recorder_guid)
 
     def run(self):
+        thread_start_time = time.time()
+        logger.debug(f"[{self.camera_name} - {self.recorder_name}] Iniciando monitoramento da câmera")
+        # --- Medir tempo do ffprobe ---
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
             self.trigger_error_event("Failed to get RTSP resolution")
@@ -279,6 +285,8 @@ class CameraThread(threading.Thread):
             "-"
         ]
 
+        # --- Início FFmpeg ---
+        ffmpeg_start = time.time()
         self.ffmpeg_proc = subprocess.Popen(
             ffmpeg_cmd,
             stdout=subprocess.PIPE,
@@ -286,13 +294,25 @@ class CameraThread(threading.Thread):
             bufsize=4096,
             text=False
         )
+        logger.debug(f"[{self.camera_name} - {self.recorder_name}] FFmpeg iniciado em {time.time() - ffmpeg_start:.2f}s")
 
         if self.ffmpeg_proc.stdout is None or self.ffmpeg_proc.stderr is None:
             self.trigger_error_event("FFmpeg não iniciou corretamente")
             return
 
+        # --- FreshestFFmpegFrame ---
         self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height)
 
+        # --- Log do tempo até o primeiro frame ---
+        first_frame_time = time.time()
+        frame = None
+        while frame is None and self.running:
+            frame = self.freshest.read()
+            if frame is None:
+                time.sleep(0.05)
+        logger.debug(f"[{self.camera_name} - {self.recorder_name}] Primeiro frame recebido após {time.time() - first_frame_time:.2f}s")
+
+        # --- Thread de log de erros FFmpeg ---
         self.error_thread = threading.Thread(
             target=self._log_ffmpeg_errors,
             args=(self.ffmpeg_proc.stderr,),
@@ -304,13 +324,16 @@ class CameraThread(threading.Thread):
             frame_count = 0
             last_sent = 0
             person_detected = False
-            last_total_detections = 0
             thread_start_time = time.time()
 
             logger.debug(f"[{self.camera_name} - {self.recorder_name}] Entrando no loop de monitoramento.")
 
             while self.running and (time.time() - thread_start_time < 20):
+                frame_start = time.time()
                 frame = self.freshest.read()
+                frame_end = time.time()
+                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Frame lido em {frame_end - frame_start:.3f}s")
+
                 if frame is None:
                     time.sleep(0.2)
                     continue
@@ -325,7 +348,10 @@ class CameraThread(threading.Thread):
                             break
                     continue
 
+                # --- Processamento do modelo ---
+                model_start = time.time()
                 result = model(resized, classes=[0], verbose=False)
+                logger.debug(f"[{self.camera_name} - {self.recorder_name}] Modelo processou frame em {time.time() - model_start:.3f}s")
                 person_detected = False
                 total_detections = 0
 
@@ -372,6 +398,7 @@ class CameraThread(threading.Thread):
             self.trigger_error_event("Erro inesperado na thread da câmera")
 
         finally:
+            logger.debug(f"[{self.camera_name} - {self.recorder_name}] Monitoramento encerrado após {time.time() - thread_start_time:.2f}s")
             self.stop()
 
 
