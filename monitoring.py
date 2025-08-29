@@ -50,7 +50,8 @@ MAX_ACTIVE_CAMERAS = 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Usando dispositivo: {device}")
-model = YOLO('models/yolov8n.pt', device=device)
+model = YOLO('models/yolov8n.pt')
+model.to(device)
 
 # --- Carregar ZONES do arquivo JSON com keys convertidas para tupla
 with open('zones.json', 'r') as f:
