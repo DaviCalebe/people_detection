@@ -94,9 +94,12 @@ if __name__ == "__main__":
         "CE_CRATO",
         "CE_FORTALEZA_NVR_1",
         "CE_FORTALEZA_NVR_2",
+        "CE_MARACANAU_DVR_1",
+        "CE_MARACANAU_DVR_2",
         "MA_BALSAS",
         "MA_IMPERATRIZ",
         "PA_ANANINDEUA_DVR_1",
+        "PA_ANANINDEUA_DVR_2",
         "PA_MARABA",
         "PA_REDENCAO",
         "PB_CAMPINA_GRANDE",
@@ -119,7 +122,6 @@ if __name__ == "__main__":
         "TO_GURUPI",
         "TO_PALMAS"
     ]
-
 
     try:
         logger.info("Iniciando ronda virtual...")
