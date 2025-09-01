@@ -103,6 +103,8 @@ if __name__ == "__main__":
         "PA_MARABA",
         "PA_REDENCAO",
         "PB_CAMPINA_GRANDE",
+        "PB_JOÃO_PESSOA_DVR_1",
+        "PB_JOÃO_PESSOA_DVR_2",
         "PE_CEASA",
         "PE_PETROLINA",
         "PI_BOM_JESUS",

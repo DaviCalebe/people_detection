@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
