@@ -184,10 +184,8 @@ def build_selected_recorders(guid_list):
 if __name__ == "__main__":
     # Lista dos recorders desejados (substitua pelos GUIDs reais)
     selected_guids = [
-        "{2C54AD32-1087-4FE6-B29E-553DB9E60319}",
-        "{ACE1E34A-6155-4A34-BC76-BB4FD14F1A89}",
-        "{4FCAF92F-7CBF-4FC5-B210-DD9FDE7E8937}",
-        "{7E41FD0F-C96D-4B92-A7FB-67AFF526D68F}"
+        "{46487989-6572-4252-A572-48909096E015}",
+        "{406F9871-DA9A-4C60-81E2-AE74A75C4979}",
     ]
 
     data = build_selected_recorders(selected_guids)

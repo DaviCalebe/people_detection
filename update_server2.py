@@ -2,7 +2,7 @@ import json
 import sqlite3
 
 # Arquivo JSON com os gravadores que você quer importar
-JSON_FILE = "selected_recorders_20250825_091237.json"
+JSON_FILE = "selected_recorders_20250901_090119.json"
 
 # Banco SQLite existente
 DB_FILE = "database.db"
