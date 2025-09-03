@@ -155,7 +155,7 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
             info = json.loads(result.stdout)
             width = info["streams"][0]["width"]
             height = info["streams"][0]["height"]
-            logger.info(f"[{camera_name} - {recorder_name}] Resolução obtida ({stream_type}): {width}x{height}")
+            logger.debug(f"[{camera_name} - {recorder_name}] Resolução obtida ({stream_type}): {width}x{height}")
             return width, height
 
         except subprocess.TimeoutExpired:
@@ -231,8 +231,14 @@ class CameraThread(threading.Thread):
         if self.ffmpeg_proc and self.ffmpeg_proc.poll() is None:
             try:
                 self.ffmpeg_proc.terminate()
-                self.ffmpeg_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+                # Espera até 5 segundos pelo término do FFmpeg
+                for _ in range(50):  # 50 * 0.1s = 5s
+                    if self.ffmpeg_proc.poll() is not None:
+                        break
+                    time.sleep(0.1)
+                else:
+                    self.ffmpeg_proc.kill()
+            except Exception:
                 self.ffmpeg_proc.kill()
 
         if SHOW_VIDEO:
@@ -242,6 +248,7 @@ class CameraThread(threading.Thread):
                 pass
 
         logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada com sucesso.")
+
 
     def _log_ffmpeg_errors(self, stderr_pipe):
         pps_error_detected = False
