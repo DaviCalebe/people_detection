@@ -23,7 +23,7 @@ log_filename = os.path.join(log_dir, f"logs_{datetime.now().strftime('%d-%m-%Y')
 
 # Criar o logger
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Criar formatador com timestamp
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')

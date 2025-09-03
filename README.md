@@ -8,7 +8,7 @@
 2. Ative o ambiente:
 
    ```bash
-   source .venv/Scripts/activate
+   source .venv_cuda/Scripts/activate
 
 3. Instale as dependências:
 
