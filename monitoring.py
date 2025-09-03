@@ -456,7 +456,7 @@ def get_cameras_by_recorder_virtual(recorder_guid):
     query = """
         SELECT
             c.id,
-            c.camera_id,           -- mantém como camera_id
+            c.camera_id,
             c.name,
             s.url,
             s.username,
@@ -465,10 +465,12 @@ def get_cameras_by_recorder_virtual(recorder_guid):
             r.name AS recorder_name,
             s.stream_id
         FROM cameras c
-        JOIN streams s ON s.camera_id = c.id AND s.stream_id = 1  -- apenas stream extra
+        JOIN streams s ON s.camera_id = c.id AND s.stream_id = 1
         JOIN recorders r ON c.recorder_id = r.id
-        WHERE r.guid = ? AND s.url != 'indisponível'
-        ORDER BY c.id
+        WHERE r.guid = ? 
+        AND s.url != 'indisponível'
+        AND c.active = 1   -- câmeras ativas
+        ORDER BY c.id;
     """
 
     cursor.execute(query, (recorder_guid,))

@@ -33,13 +33,14 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
             logger.warning("Nenhum gravador encontrado para a ronda.")
             return
 
-        for recorder in recorders:
+        total = len(recorders)
+        for idx, recorder in enumerate(recorders, start=1):
+            logger.info(f"[{idx}/{total}] Iniciando gravador {recorder['name']}")
+
             cameras = get_cameras_by_recorder_virtual(recorder["guid"])
             if not cameras:
-                logger.warning(f"Gravador {recorder['name']} não possui câmeras.")
+                logger.warning(f"[{idx}/{total}] Gravador {recorder['name']} não possui câmeras.")
                 continue
-
-            logger.info(f"Iniciando gravador {recorder['name']} com {len(cameras)} câmeras.")
 
             if modo == "all":
                 threads = []
@@ -64,7 +65,7 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
             else:  # modo "first"
                 cam = cameras[0]
                 full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
-                logger.info(f"Iniciando gravador {recorder['name']} com a câmera {cam['name']}.")
+                logger.info(f"[{idx}/{total}] Iniciando câmera {cam['name']} do gravador {recorder['name']}")
                 t = CameraThread(
                     rtsp_url=full_rtsp,
                     camera_name=cam["name"],
@@ -77,7 +78,7 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                 time.sleep(RUN_TIME_PER_RECORDER)
                 t.join()
 
-            logger.info(f"Finalizado gravador {recorder['name']}.\n")
+            logger.info(f"[{idx}/{total}] Finalizado gravador {recorder['name']}.\n")
 
 
 if __name__ == "__main__":

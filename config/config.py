@@ -4,8 +4,8 @@ from guids.station_guids import STATION_BASE_URL
 login_url = f"{STATION_BASE_URL}/login"
 
 credentials = {
-    "username": "TesteAPI",
-    "password": "Teste.1"
+    "username": "yolo",
+    "password": "Mgm@2025"
 }
 
 res = post(login_url, json=credentials)
