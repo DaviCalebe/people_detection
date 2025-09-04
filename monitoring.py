@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -23,7 +23,7 @@ log_filename = os.path.join(log_dir, f"logs_{datetime.now().strftime('%d-%m-%Y')
 
 # Criar o logger
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Criar formatador com timestamp
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
@@ -167,9 +167,8 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
     return None
 
 
-
 class FreshestFFmpegFrame(threading.Thread):
-    def __init__(self, ffmpeg_proc, width, height):
+    def __init__(self, ffmpeg_proc, width, height, timeout=5):
         super().__init__()
         self.proc = ffmpeg_proc
         self.width = width
@@ -177,20 +176,35 @@ class FreshestFFmpegFrame(threading.Thread):
         self.frame = None
         self.lock = threading.Lock()
         self.running = True
+        self.last_frame_time = time.time()
+        self.timeout = timeout  # máximo tempo sem frame
         self.start()
 
     def run(self):
         frame_size = self.width * self.height * 3
         while self.running:
-            raw_frame = self.proc.stdout.read(frame_size)
-            if not raw_frame:
-                break
-            if len(raw_frame) != frame_size:
-                continue  # Pula frames incompletos
+            try:
+                raw_frame = self.proc.stdout.read(frame_size)
+                
+                if not raw_frame:
+                    # se passar do timeout sem frame, sai do loop
+                    if time.time() - self.last_frame_time > self.timeout:
+                        logging.warning(f"FFmpeg não retornou frame por mais de {self.timeout}s")
+                        break
+                    time.sleep(0.01)  # evita busy loop
+                    continue
 
-            frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
-            with self.lock:
-                self.frame = frame
+                if len(raw_frame) != frame_size:
+                    continue  # frame incompleto
+
+                frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
+                with self.lock:
+                    self.frame = frame
+                    self.last_frame_time = time.time()  # atualiza o relógio do último frame
+
+            except Exception as e:
+                logging.error(f"Erro lendo frame FFmpeg: {e}")
+                break
 
     def read(self):
         with self.lock:
@@ -198,7 +212,7 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.join()
+        self.join()  # join normal, sem timeout
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
@@ -343,7 +357,7 @@ class CameraThread(threading.Thread):
             self.trigger_error_event("FFmpeg não iniciou corretamente")
             return
 
-        self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height)
+        self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height, timeout=20)
 
         # aguardar primeiro frame
         first_frame_time = time.time()
