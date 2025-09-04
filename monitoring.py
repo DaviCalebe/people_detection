@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -200,7 +200,6 @@ class FreshestFFmpegFrame(threading.Thread):
         self.running = False
         self.join()
 
-
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
         super().__init__()
@@ -215,24 +214,36 @@ class CameraThread(threading.Thread):
         self.ffmpeg_proc = None
         self.freshest = None
         self.error_thread = None
+        self.error_thread_running = False  # flag nova para encerrar thread de erros
 
     def trigger_error_event(self, reason):
         if not self.error_event_sent:
             logger.warning(f"[{self.camera_name} - {self.recorder_name}] Acionando evento por erro: {reason}")
-            set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+            # dispara em thread separada para não travar
+            threading.Thread(
+                target=set_event_schedule,
+                args=(self.dguard_camera_id, self.recorder_guid),
+                daemon=True
+            ).start()
             self.error_event_sent = True
 
     def stop(self):
         self.running = False
 
+        # parar freshest
         if self.freshest:
             self.freshest.stop()
 
+        # parar thread de erros
+        self.error_thread_running = False
+        if self.error_thread and self.error_thread.is_alive():
+            self.error_thread.join(timeout=1)
+
+        # fechar FFmpeg de forma segura
         if self.ffmpeg_proc and self.ffmpeg_proc.poll() is None:
             try:
                 self.ffmpeg_proc.terminate()
-                # Espera até 5 segundos pelo término do FFmpeg
-                for _ in range(50):  # 50 * 0.1s = 5s
+                for _ in range(50):  # até 5s
                     if self.ffmpeg_proc.poll() is not None:
                         break
                     time.sleep(0.1)
@@ -249,13 +260,16 @@ class CameraThread(threading.Thread):
 
         logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada com sucesso.")
 
-
     def _log_ffmpeg_errors(self, stderr_pipe):
+        self.error_thread_running = True
         pps_error_detected = False
         ref_error_detected = False
         disconnect_error_detected = False
 
-        for line in iter(stderr_pipe.readline, b''):
+        while self.error_thread_running:
+            line = stderr_pipe.readline()
+            if not line:
+                break
             decoded_line = line.decode('utf-8', errors='ignore').strip()
 
             if "non-existing PPS" in decoded_line:
@@ -265,10 +279,7 @@ class CameraThread(threading.Thread):
                 continue
 
             if pps_error_detected and any(x in decoded_line for x in [
-                "decode_slice_header error",
-                "no frame!",
-                "Error submitting packet",
-                "Invalid data found"
+                "decode_slice_header error", "no frame!", "Error submitting packet", "Invalid data found"
             ]):
                 continue
 
@@ -279,11 +290,8 @@ class CameraThread(threading.Thread):
                 continue
 
             if ref_error_detected and any(x in decoded_line for x in [
-                "decode_slice_header error",
-                "bytestream",
-                "Missing reference picture",
-                "no frame!",
-                "Invalid data found"
+                "decode_slice_header error", "bytestream", "Missing reference picture",
+                "no frame!", "Invalid data found"
             ]):
                 continue
 
@@ -291,16 +299,17 @@ class CameraThread(threading.Thread):
                 if not disconnect_error_detected:
                     logger.error(f"{self.camera_name} ({self.recorder_name}): Desconexão remota detectada (-10054).")
                     disconnect_error_detected = True
-                    set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+                    self.trigger_error_event("Desconexão remota detectada (-10054)")
                 continue
 
             logger.error(f"{self.camera_name} ({self.recorder_name}) {decoded_line}")
-            set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+            self.trigger_error_event("Erro detectado no FFmpeg")
 
     def run(self):
         thread_start_time = time.time()
         logger.debug(f"[{self.camera_name} - {self.recorder_name}] Iniciando monitoramento da câmera")
-        # --- Medir tempo do ffprobe ---
+
+        # resolução RTSP
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
             self.trigger_error_event("Failed to get RTSP resolution")
@@ -319,7 +328,7 @@ class CameraThread(threading.Thread):
             "-"
         ]
 
-        # --- Início FFmpeg ---
+        # iniciar ffmpeg
         ffmpeg_start = time.time()
         self.ffmpeg_proc = subprocess.Popen(
             ffmpeg_cmd,
@@ -334,19 +343,18 @@ class CameraThread(threading.Thread):
             self.trigger_error_event("FFmpeg não iniciou corretamente")
             return
 
-        # --- FreshestFFmpegFrame ---
         self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height)
 
-        # --- Log do tempo até o primeiro frame ---
+        # aguardar primeiro frame
         first_frame_time = time.time()
         frame = None
         while frame is None and self.running:
             frame = self.freshest.read()
             if frame is None:
                 time.sleep(0.05)
-        logger.debug(f"[{self.camera_name} - {self.recorder_name}] Primeiro frame recebido após {time.time() - first_frame_time:.2f}s")
+        logger.debug(f"[{self.camera_name} - {self.recorder_name}] Primeiro frame após {time.time() - first_frame_time:.2f}s")
 
-        # --- Thread de log de erros FFmpeg ---
+        # iniciar thread de erros
         self.error_thread = threading.Thread(
             target=self._log_ffmpeg_errors,
             args=(self.ffmpeg_proc.stderr,),
@@ -378,7 +386,7 @@ class CameraThread(threading.Thread):
                             break
                     continue
 
-                # --- Processamento do modelo ---
+                # processamento do modelo
                 result = model(resized, classes=[0], verbose=False)
                 person_detected = False
                 total_detections = 0
@@ -410,7 +418,7 @@ class CameraThread(threading.Thread):
                     if current_time - last_sent >= event_delay:
                         logger.warning(f"Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
                         last_sent = current_time
-                        set_event_schedule(self.dguard_camera_id, self.recorder_guid)
+                        self.trigger_error_event("Pessoa detectada")
                     break
 
                 if SHOW_VIDEO:
