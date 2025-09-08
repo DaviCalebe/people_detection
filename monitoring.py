@@ -2,6 +2,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+import re  # <--- adicione isto
 import cv2
 import json
 import os
@@ -15,7 +16,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -110,16 +111,20 @@ def insert_rtsp_credentials(url_base, username, password):
     return urlunparse(parsed._replace(netloc=netloc))
 
 
-def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
+def get_rtsp_resolution(dguard_url, camera_name=None, recorder_name=None):
     """
-    Tenta obter a resolução da stream extra (subtype=1). 
-    Se demorar >10s ou der erro, troca para subtype=0 (stream principal) e tenta novamente.
-    Logs detalhados indicam cada tentativa.
+    Tenta obter a resolução da stream usando a nova dguard_url.
+    Se der erro ou timeout, faz fallback para streams/0 (stream principal).
     """
-    urls_to_try = [rtsp_url, rtsp_url.replace("subtype=1", "subtype=0")]
+    # Substituir o número do stream no final da URL
+    urls_to_try = [dguard_url]
+
+    # Tenta fallback para streams/0 se não estiver usando streams/0
+    if not dguard_url.endswith("/streams/0"):
+        urls_to_try.append(re.sub(r"/streams/\d+$", "/streams/0", dguard_url))
 
     for idx, url in enumerate(urls_to_try):
-        stream_type = "extra" if idx == 0 else "principal"
+        stream_type = "original" if idx == 0 else "principal"
 
         if idx == 1:
             logger.info(f"[{camera_name} - {recorder_name}] Tentando fallback para stream principal...")
@@ -476,8 +481,7 @@ def get_recorders_server1():
 def get_cameras_by_recorder_virtual(recorder_guid):
     """
     Retorna todas as câmeras de um gravador específico,
-    usando apenas a stream extra (stream_id=1),
-    prontas para iniciar um CameraThread.
+    usando a coluna dguard_url, prontas para iniciar um CameraThread.
     """
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -487,19 +491,19 @@ def get_cameras_by_recorder_virtual(recorder_guid):
             c.id,
             c.camera_id,
             c.name,
-            s.url,
+            s.dguard_url,
             s.username,
             s.password,
             r.guid AS recorder_guid,
             r.name AS recorder_name,
             s.stream_id
         FROM cameras c
-        JOIN streams s ON s.camera_id = c.id AND s.stream_id = 1
+        JOIN streams s ON s.camera_id = c.id
         JOIN recorders r ON c.recorder_id = r.id
         WHERE r.guid = ? 
-        AND s.url != 'indisponível'
+        AND s.dguard_url IS NOT NULL
         AND c.active = 1   -- câmeras ativas
-        ORDER BY c.id;
+        ORDER BY c.id, s.stream_id DESC;
     """
 
     cursor.execute(query, (recorder_guid,))
@@ -512,9 +516,9 @@ def get_cameras_by_recorder_virtual(recorder_guid):
             "id": r[0],
             "camera_id": r[1],        # chave ajustada para compatibilidade com main.py
             "name": r[2],
-            "url": r[3],
-            "username": r[4],
-            "password": r[5],
+            "url": r[3],              # agora é a dguard_url
+            "username": "admin",
+            "password": "seventh",
             "recorder_guid": r[6],
             "recorder_name": r[7],
             "stream_id": r[8]

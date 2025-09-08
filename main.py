@@ -14,14 +14,11 @@ RUN_TIME_PER_RECORDER = 10
 
 def ronda_virtual(selected_recorders_names=None, modo="first"):
     """
-    Executa a ronda virtual percorrendo os gravadores selecionados.
-
-    :param selected_recorders_names: lista com nomes dos gravadores a rodar.
-                                     Se None, roda todos.
-    :param modo: Define como abrir as câmeras de cada gravador.
-                 "first" = abre apenas a primeira câmera
-                 "all"   = abre todas as câmeras
+    Executa a ronda virtual percorrendo os gravadores selecionados usando dguard_url.
     """
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
     while True:
         recorders = get_recorders()
 
@@ -37,6 +34,7 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
         for idx, recorder in enumerate(recorders, start=1):
             logger.info(f"[{idx}/{total}] Iniciando gravador {recorder['name']}")
 
+            # Pegar câmeras do recorder
             cameras = get_cameras_by_recorder_virtual(recorder["guid"])
             if not cameras:
                 logger.warning(f"[{idx}/{total}] Gravador {recorder['name']} não possui câmeras.")
@@ -45,7 +43,18 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
             if modo == "all":
                 threads = []
                 for cam in cameras:
-                    full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
+                    # Puxar a dguard_url do banco
+                    cursor.execute(
+                        "SELECT dguard_url FROM streams WHERE camera_id=? ORDER BY stream_id DESC",
+                        (cam["id"],)
+                    )
+                    row = cursor.fetchone()
+                    if not row or not row[0]:
+                        logger.warning(f"[{cam['name']} - {recorder['name']}] Nenhuma dguard_url encontrada, pulando câmera.")
+                        continue
+
+                    full_rtsp = insert_rtsp_credentials(row[0], cam["username"], cam["password"])
+
                     t = CameraThread(
                         rtsp_url=full_rtsp,
                         camera_name=cam["name"],
@@ -58,13 +67,22 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                     threads.append(t)
 
                 time.sleep(RUN_TIME_PER_RECORDER)
-
                 for t in threads:
                     t.join()
 
             else:  # modo "first"
                 cam = cameras[0]
-                full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
+
+                cursor.execute(
+                    "SELECT dguard_url FROM streams WHERE camera_id=? ORDER BY stream_id DESC",
+                    (cam["id"],)
+                )
+                row = cursor.fetchone()
+                if not row or not row[0]:
+                    logger.warning(f"[{cam['name']} - {recorder['name']}] Nenhuma dguard_url encontrada, pulando câmera.")
+                    continue
+
+                full_rtsp = insert_rtsp_credentials(row[0], cam["username"], cam["password"])
                 logger.info(f"[{idx}/{total}] Iniciando câmera {cam['name']} do gravador {recorder['name']}")
                 t = CameraThread(
                     rtsp_url=full_rtsp,
@@ -79,6 +97,8 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                 t.join()
 
             logger.info(f"[{idx}/{total}] Finalizado gravador {recorder['name']}.\n")
+
+        conn.close()
 
 
 if __name__ == "__main__":
