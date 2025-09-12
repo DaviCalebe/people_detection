@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from events.scheduler import set_event_schedule
 
 # Caminho para salvar os logs fora do projeto
-log_dir = r"C:\Users\suporte\Documents\Logs-Deteccao"
+log_dir = r"C:\Users\dcalebe\Documents\Logs-Deteccao"
 os.makedirs(log_dir, exist_ok=True)  # Cria a pasta se não existir
 
 # Configurar o nome do arquivo de log com data/hora
@@ -313,11 +313,9 @@ class CameraThread(threading.Thread):
                 if not disconnect_error_detected:
                     logger.error(f"{self.camera_name} ({self.recorder_name}): Desconexão remota detectada (-10054).")
                     disconnect_error_detected = True
-                    self.trigger_error_event("Desconexão remota detectada (-10054)")
                 continue
 
             logger.error(f"{self.camera_name} ({self.recorder_name}) {decoded_line}")
-            self.trigger_error_event("Erro detectado no FFmpeg")
 
     def run(self):
         thread_start_time = time.time()
@@ -326,7 +324,7 @@ class CameraThread(threading.Thread):
         # resolução RTSP
         resolution = get_rtsp_resolution(self.rtsp_url, self.camera_name, self.recorder_name)
         if not resolution:
-            self.trigger_error_event("Failed to get RTSP resolution")
+            logger.error(f"[{self.camera_name} - {self.recorder_name}] Não foi possível obter resolução RTSP. Encerrando thread.")
             return
 
         width, height = resolution
@@ -354,7 +352,7 @@ class CameraThread(threading.Thread):
         logger.debug(f"[{self.camera_name} - {self.recorder_name}] FFmpeg iniciado em {time.time() - ffmpeg_start:.2f}s")
 
         if self.ffmpeg_proc.stdout is None or self.ffmpeg_proc.stderr is None:
-            self.trigger_error_event("FFmpeg não iniciou corretamente")
+            logger.error(f"[{self.camera_name} - {self.recorder_name}] Falha ao iniciar FFmpeg.")
             return
 
         self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height, timeout=20)
@@ -432,7 +430,7 @@ class CameraThread(threading.Thread):
                     if current_time - last_sent >= event_delay:
                         logger.warning(f"Pessoa detectada! ({self.camera_name} - {self.recorder_name})")
                         last_sent = current_time
-                        self.trigger_error_event("Pessoa detectada")
+                        set_event_schedule(self.dguard_camera_id, self.recorder_guid)
                     break
 
                 if SHOW_VIDEO:
@@ -445,7 +443,6 @@ class CameraThread(threading.Thread):
 
         except Exception as e:
             logger.exception(f"Erro inesperado em {self.camera_name} ({self.recorder_name}): {e}")
-            self.trigger_error_event("Erro inesperado na thread da câmera")
 
         finally:
             logger.debug(f"[{self.camera_name} - {self.recorder_name}] Monitoramento encerrado após {time.time() - thread_start_time:.2f}s")

@@ -1,3 +1,4 @@
+import sqlite3
 import time
 import logging
 from monitoring import CameraThread, insert_rtsp_credentials, get_recorders, get_cameras_by_recorder_virtual
@@ -15,13 +16,9 @@ RUN_TIME_PER_RECORDER = 10
 def ronda_virtual(selected_recorders_names=None, modo="first"):
     """
     Executa a ronda virtual percorrendo os gravadores selecionados.
-
-    :param selected_recorders_names: lista com nomes dos gravadores a rodar.
-                                     Se None, roda todos.
-    :param modo: Define como abrir as câmeras de cada gravador.
-                 "first" = abre apenas a primeira câmera
-                 "all"   = abre todas as câmeras
     """
+    TIMEOUT_PER_RECORDER = 60  # segundos
+
     while True:
         recorders = get_recorders()
 
@@ -42,8 +39,11 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                 logger.warning(f"[{idx}/{total}] Gravador {recorder['name']} não possui câmeras.")
                 continue
 
+            threads = []
+            start_time = time.time()
+
             if modo == "all":
-                threads = []
+                # cria uma thread por câmera
                 for cam in cameras:
                     full_rtsp = insert_rtsp_credentials(cam["url"], cam["username"], cam["password"])
                     t = CameraThread(
@@ -56,11 +56,6 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                     )
                     t.start()
                     threads.append(t)
-
-                time.sleep(RUN_TIME_PER_RECORDER)
-
-                for t in threads:
-                    t.join()
 
             else:  # modo "first"
                 cam = cameras[0]
@@ -75,8 +70,25 @@ def ronda_virtual(selected_recorders_names=None, modo="first"):
                     recorder_name=recorder["name"]
                 )
                 t.start()
-                time.sleep(RUN_TIME_PER_RECORDER)
-                t.join()
+                threads.append(t)
+
+            # --- Monitorar até timeout ou todas finalizarem ---
+            while True:
+                elapsed = time.time() - start_time
+
+                if elapsed > TIMEOUT_PER_RECORDER:
+                    logger.error(f"[{idx}/{total}] Tempo limite de {TIMEOUT_PER_RECORDER}s atingido no gravador {recorder['name']}. Encerrando forçadamente.")
+                    for t in threads:
+                        t.stop()
+                        if t.is_alive():
+                            t.join(timeout=1)
+                    break
+
+                # Se todas terminaram antes do timeout, sai
+                if all(not t.is_alive() for t in threads):
+                    break
+
+                time.sleep(1)
 
             logger.info(f"[{idx}/{total}] Finalizado gravador {recorder['name']}.\n")
 
@@ -130,7 +142,6 @@ if __name__ == "__main__":
         logger.info("Iniciando ronda virtual...")
 
         # Pegar todos os gravadores do Server 1
-        import sqlite3
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM recorders WHERE server_id = 1")
