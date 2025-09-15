@@ -132,6 +132,7 @@ if __name__ == "__main__":
         "RO_GUAJARÁ_MIRIM_LOJA",
         "RO_PORTO_VELHO_NORTE_CENTER",
         "RO_PORTO_VELHO_NORTE_TIRES",
+        "RO_VILHENA_DVR1",
         "RO_VILHENA_DVR2",
         "SE_ARACAJU",
         "TO_GURUPI",
