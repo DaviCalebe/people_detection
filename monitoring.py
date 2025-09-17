@@ -185,7 +185,7 @@ class FreshestFFmpegFrame(threading.Thread):
         while self.running:
             try:
                 raw_frame = self.proc.stdout.read(frame_size)
-                
+
                 if not raw_frame:
                     # se passar do timeout sem frame, sai do loop
                     if time.time() - self.last_frame_time > self.timeout:
@@ -212,7 +212,18 @@ class FreshestFFmpegFrame(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.join()  # join normal, sem timeout
+        # força fechamento do stdout para destravar o read()
+        try:
+            if self.proc and self.proc.stdout:
+                self.proc.stdout.close()
+        except Exception:
+            pass
+
+        # join com timeout para não travar indefinidamente
+        self.join(timeout=2)
+        if self.is_alive():
+            logging.error("FreshestFFmpegFrame não conseguiu finalizar dentro do timeout")
+
 
 class CameraThread(threading.Thread):
     def __init__(self, rtsp_url, camera_name, camera_id, dguard_camera_id, recorder_guid, recorder_name):
