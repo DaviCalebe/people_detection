@@ -7,6 +7,8 @@ import json
 import os
 import logging
 import torch
+import psutil
+import signal
 import numpy as np
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
@@ -57,6 +59,30 @@ model.to(device)
 with open('zones.json', 'r') as f:
     raw = json.load(f)
     ZONES = {literal_eval(k): v for k, v in raw.items()}
+
+def kill_process_tree(pid, sig=signal.SIGTERM, timeout=3):
+    try:
+        parent = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return
+    children = parent.children(recursive=True)
+    for child in children:
+        try:
+            child.send_signal(sig)
+        except Exception:
+            pass
+    # manda sinal pro pai também
+    try:
+        parent.send_signal(sig)
+    except Exception:
+        pass
+    gone, alive = psutil.wait_procs([parent] + children, timeout=timeout)
+    for p in alive:
+        try:
+            p.kill()
+        except Exception:
+            pass
+
 
 
 def is_in_zone(center, config):
@@ -168,7 +194,7 @@ def get_rtsp_resolution(rtsp_url, camera_name=None, recorder_name=None):
 
 
 class FreshestFFmpegFrame(threading.Thread):
-    def __init__(self, ffmpeg_proc, width, height, timeout=5):
+    def __init__(self, ffmpeg_proc, width, height, parent, timeout=5):
         super().__init__()
         self.proc = ffmpeg_proc
         self.width = width
@@ -178,6 +204,7 @@ class FreshestFFmpegFrame(threading.Thread):
         self.running = True
         self.last_frame_time = time.time()
         self.timeout = timeout  # máximo tempo sem frame
+        self.parent = parent    # referência para CameraThread        
         self.start()
 
     def run(self):
@@ -187,9 +214,11 @@ class FreshestFFmpegFrame(threading.Thread):
                 raw_frame = self.proc.stdout.read(frame_size)
 
                 if not raw_frame:
-                    # se passar do timeout sem frame, sai do loop
+                    # se passar do timeout sem frame, aciona erro e encerra CameraThread
                     if time.time() - self.last_frame_time > self.timeout:
-                        logging.warning(f"FFmpeg não retornou frame por mais de {self.timeout}s")
+                        logging.warning(f"[{self.parent.camera_name} - {self.parent.recorder_name}] "
+                                        f"FFmpeg não retornou frame por mais de {self.timeout}s, encerrando.")
+                        self.parent.forcing_stop()
                         break
                     time.sleep(0.01)  # evita busy loop
                     continue
@@ -285,6 +314,37 @@ class CameraThread(threading.Thread):
 
         logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada com sucesso.")
 
+
+    def forcing_stop(self):
+        """Força encerramento da CameraThread e mata ffmpeg/filhos"""
+        self.running = False
+
+        if self.freshest:
+            try:
+                self.freshest.stop()
+            except Exception as e:
+                logger.error(f"[{self.camera_name} - {self.recorder_name}] Erro ao parar freshest: {e}")
+
+        self.error_thread_running = False
+        if self.error_thread and self.error_thread.is_alive():
+            self.error_thread.join(timeout=1)
+
+        if self.ffmpeg_proc and self.ffmpeg_proc.poll() is None:
+            logger.warning(f"[{self.camera_name} - {self.recorder_name}] Forcing stop do ffmpeg (PID={self.ffmpeg_proc.pid})")
+            try:
+                kill_process_tree(self.ffmpeg_proc.pid)  # versão com psutil
+            except Exception as e:
+                logger.error(f"[{self.camera_name} - {self.recorder_name}] Erro no forcing_stop: {e}")
+
+        if SHOW_VIDEO:
+            try:
+                cv2.destroyWindow(f"{self.camera_name}")
+            except:
+                pass
+
+        logger.info(f"[{self.camera_name} - {self.recorder_name}] CameraThread finalizada via forcing_stop().")
+
+
     def _log_ffmpeg_errors(self, stderr_pipe):
         self.error_thread_running = True
         pps_error_detected = False
@@ -366,7 +426,7 @@ class CameraThread(threading.Thread):
             logger.error(f"[{self.camera_name} - {self.recorder_name}] Falha ao iniciar FFmpeg.")
             return
 
-        self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height, timeout=20)
+        self.freshest = FreshestFFmpegFrame(self.ffmpeg_proc, width, height, parent=self, timeout=20)
 
         # aguardar primeiro frame
         first_frame_time = time.time()
