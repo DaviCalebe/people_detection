@@ -130,9 +130,10 @@ def is_in_zone(center, config):
 
 def insert_rtsp_credentials(url_base, username, password):
     parsed = urlparse(url_base)
-    netloc = f"{username}:{password}@{parsed.hostname}"
+    netloc = f"{username}:{password}@mgmacriobranco.ddns-intelbras.com.br"
+    logger.debug(f"Inserindo credenciais RTSP: {netloc}")
     if parsed.port:
-        netloc += f":{parsed.port}"
+        netloc += ":8153"
     return urlunparse(parsed._replace(netloc=netloc))
 
 
